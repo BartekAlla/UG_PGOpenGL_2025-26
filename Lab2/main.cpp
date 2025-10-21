@@ -8,6 +8,7 @@
 using namespace std;
 // Funkcje pomocnicze
 #include "utilities.hpp"
+#include "house.h"
 
 
 // ---------------------------------------
@@ -19,6 +20,10 @@ GLuint idVAO_scene1; //tablica wierzchołków scena 1
 GLuint idVBO_coord; // bufora na wspolrzedne wierzcholkow
 GLuint idVBO_color; // bufora na kolory wierzcholkow
 GLuint idVBO_color_grad; //bufora na kolory wierzchołków z gradientem
+//Zmienne scena 3
+GLuint idProgram_scene3;
+GLuint idVAO_scene3;
+GLuint idVBO_scene3;
 
 //Scena
 int sceneNumber = 0;
@@ -29,6 +34,10 @@ const int N = 100;
 vector<GLfloat> vertexData;
 vector<GLfloat> vertexColorScene1;
 vector<GLfloat> vertexColorScene2;
+float houseOffsetX = 0.0f;
+float houseOffsetY = 0.0f;
+
+const float step = 0.05f;
 
 void RenderScene(GLuint idProgram, GLuint idVAO) {
 	glClear( GL_COLOR_BUFFER_BIT );
@@ -57,7 +66,18 @@ void DisplayScene()
 			break;
 		case 2:
 			glutSetWindowTitle("Scena3");
-			RenderScene(idProgram, idVAO);
+            glClear(GL_COLOR_BUFFER_BIT);
+            glUseProgram(idProgram_scene3);
+            glBindVertexArray(idVAO_scene3);
+
+            GLint locOffset = glGetUniformLocation(idProgram_scene3, "uOffset");
+            glUniform2f(locOffset, houseOffsetX, houseOffsetY);
+
+            glDrawArrays(GL_TRIANGLES, 0, NUMBER_OF_VERTICES);
+
+            glBindVertexArray(0);
+            glUseProgram(0);
+            glutSwapBuffers();
 			break;
 	}
 }
@@ -174,11 +194,25 @@ void InitializeScene1(){
 	glEnableVertexAttribArray( 1 );
 	glBindVertexArray( 0 );
 }
+void InitializeScene2() {
+	glGenVertexArrays(1, &idVAO_scene3);
+    glBindVertexArray(idVAO_scene3);
+
+    glGenBuffers(1, &idVBO_scene3);
+    glBindBuffer(GL_ARRAY_BUFFER, idVBO_scene3);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Mesh_Vertices), Mesh_Vertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);
+}
 void Initialize()
 {
 	srand(time(NULL));
 	InitializeScene0();	
 	InitializeScene1();
+	InitializeScene2();
 		// ---------------------------------------
 	// Etap (3) stworzenie potoku graficznego
 	// ---------------------------------------
@@ -187,8 +221,10 @@ void Initialize()
 		glAttachShader( idProgram, LoadShader(GL_FRAGMENT_SHADER, "fragment.glsl"));
 	LinkAndValidateProgram( idProgram );
 
-
-
+	idProgram_scene3= glCreateProgram();
+    glAttachShader(idProgram_scene3, LoadShader(GL_VERTEX_SHADER, "vertex_scene3.glsl"));
+    glAttachShader(idProgram_scene3, LoadShader(GL_FRAGMENT_SHADER, "fragment_scene3.glsl"));
+    LinkAndValidateProgram(idProgram_scene3);
 	// -----------------------------------------
 	// Etap (4) ustawienie maszyny stanow OpenGL
 	// -----------------------------------------
@@ -211,6 +247,7 @@ void Reshape( int width, int height )
 // Funkcja wywolywana podczas wcisniecia klawisza ASCII
 void Keyboard( unsigned char key, int x, int y )
 {
+	
     switch(key)
     {
 		case 27:	// ESC key
@@ -229,7 +266,16 @@ void Keyboard( unsigned char key, int x, int y )
 			// opuszczamy glowna petle
 			glutLeaveMainLoop();
 			break;
+		case 'w': case 'W':
+            if (sceneNumber == 2) houseOffsetY += step; break;
+        case 's': case 'S':
+            if (sceneNumber == 2) houseOffsetY -= step; break;
+        case 'a': case 'A':
+            if (sceneNumber == 2) houseOffsetX -= step; break;
+        case 'd': case 'D':
+            if (sceneNumber == 2) houseOffsetX += step; break;
     }
+	glutPostRedisplay();
 }
 
 
@@ -280,5 +326,8 @@ int main( int argc, char *argv[] )
 	glDeleteVertexArrays( 1, &idVBO_coord );
 	glDeleteVertexArrays( 1, &idVAO );
 	glDeleteVertexArrays( 1, &idVAO_scene1 );
+	glDeleteProgram(idProgram_scene3);
+	glDeleteBuffers(1, &idVBO_scene3);
+	glDeleteVertexArrays(1, &idVAO_scene3);
 	return 0;
 }
