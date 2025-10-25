@@ -6,7 +6,6 @@
 #include <iostream>
 #include <vector>
 using namespace std;
-// Funkcje pomocnicze
 #include "utilities.hpp"
 #include "house.h"
 
