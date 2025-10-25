@@ -23,8 +23,6 @@ void main()
 
     float gradient = gl_FragCoord.y / 500.0; 
     gradient = clamp(gradient, 0.0, 1.0);
-
-    // Wzmocnienie kontrastu kolorów gradientem
     vec3 color = mix(baseColor * 0.6, baseColor, gradient);
 
     FragColor = vec4(color, 1.0);
