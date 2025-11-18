@@ -68,8 +68,75 @@ std::vector<glm::vec3> vertices;
 std::vector<glm::vec2> uvs;
 std::vector<glm::vec3> normals;
 
+class CMesh
+{
+public:
+    GLuint VAO;
+    GLuint VBO_vertices;
+    GLuint VBO_normals;
+    size_t vertexCount;
 
+    CMesh(const char* objPath)
+    {
+        std::vector<glm::vec3> vertices;
+        std::vector<glm::vec2> uvs;
+        std::vector<glm::vec3> normals;
+
+        if (!loadOBJ(objPath, vertices, uvs, normals))
+        {
+            printf("Could not load OBJ: %s\n", objPath);
+            return;
+        }
+
+        vertexCount = vertices.size();
+
+        glGenVertexArrays(1, &VAO);
+        glBindVertexArray(VAO);
+
+        glGenBuffers(1, &VBO_vertices);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO_vertices);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+        glEnableVertexAttribArray(0);
+
+        glGenBuffers(1, &VBO_normals);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO_normals);
+        glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+        glEnableVertexAttribArray(1);
+
+        glBindVertexArray(0);
+    }
+
+    void Draw() const
+    {
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+        glBindVertexArray(0);
+    }
+};
 // ---------------------------------------
+class CProgram
+{
+public:
+    GLuint id;
+
+    CProgram(const char* vsPath, const char* fsPath)
+    {
+        id = glCreateProgram();
+        glAttachShader(id, LoadShader(GL_VERTEX_SHADER, vsPath));
+        glAttachShader(id, LoadShader(GL_FRAGMENT_SHADER, fsPath));
+        LinkAndValidateProgram(id);
+    }
+
+    void Use() const { glUseProgram(id); }
+    void Stop() const { glUseProgram(0); }
+
+    void SetMatrix(const char* name, const glm::mat4& mat) const
+    {
+        glUniformMatrix4fv(glGetUniformLocation(id, name), 1, GL_FALSE, glm::value_ptr(mat));
+    }
+};
 void DisplayScene()
 {
 
@@ -124,7 +191,7 @@ void Initialize()
 	// ---------------------------------
 	// NOWE: Wczytanie pliku OBJ
 	// ---------------------------------
-	if (!loadOBJ("monkey.obj", vertices, uvs, normals))
+	if (!loadOBJ("models/monkey.obj", vertices, uvs, normals))
 	{
 		printf("File not loaded!\n");
 	}
