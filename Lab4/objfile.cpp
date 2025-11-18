@@ -54,7 +54,6 @@ glm::mat4 matProj;
 glm::mat4 matView;
 glm::mat4 matModel;
 
-
 // Zmienne do kontroli obrotu obiektu
 float angleY = 0.0f;
 float angleX = 0.0f;
@@ -137,14 +136,48 @@ public:
         glUniformMatrix4fv(glGetUniformLocation(id, name), 1, GL_FALSE, glm::value_ptr(mat));
     }
 };
-void DisplayScene()
-{
 
-	// Czyszczenie bufora koloru
-	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+// void DisplayScene()
+// {
+
+// 	// Czyszczenie bufora koloru
+// 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 
-	// Obliczanie macierzy widoku (pozycja kamery)
+// 	// Obliczanie macierzy widoku (pozycja kamery)
+// 	matView = glm::mat4(1.0);
+// 	matView = glm::translate(matView, glm::vec3(0.0, 0.0, -2.5));
+
+// 	// Macierz modelu obiektu
+// 	matModel = glm::mat4(1.0);
+// 	matModel = glm::translate(matModel, glm::vec3(0.0, 0.0, distance));
+// 	matModel = glm::rotate(matModel, angleX, glm::vec3(1.0, 0.0, 0.0));
+// 	matModel = glm::rotate(matModel, angleY, glm::vec3(0.0, 1.0, 0.0));
+
+
+// 	// Wlaczenie potoku
+// 	glUseProgram( idProgram );
+
+// 		// Przekazujemy macierze modelu, widoku i rzutowania do potoku
+// 		glUniformMatrix4fv( glGetUniformLocation(idProgram, "matProj"), 1, GL_FALSE, glm::value_ptr(matProj) );
+// 		glUniformMatrix4fv( glGetUniformLocation(idProgram, "matView"), 1, GL_FALSE, glm::value_ptr(matView) );
+// 		glUniformMatrix4fv( glGetUniformLocation(idProgram, "matModel"), 1, GL_FALSE, glm::value_ptr(matModel) );
+
+// 		// Uruchamianie potoku (rendering)
+// 		glBindVertexArray( idVAO );
+// 		glDrawArrays( GL_TRIANGLES, 0, vertices.size() );
+// 		glBindVertexArray( 0 );
+
+
+// 	// Wylaczanie potoku
+// 	glUseProgram( 0 );
+// }
+void DisplayScene(CProgram &program, CMesh &monkey, CMesh &cube, CMesh &car, CMesh &terrain) {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // glm::mat4 matView = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -3));
+    // glm::mat4 matModel = glm::rotate(glm::mat4(1.0f), angleY, glm::vec3(0,1,0));
+		// Obliczanie macierzy widoku (pozycja kamery)
 	matView = glm::mat4(1.0);
 	matView = glm::translate(matView, glm::vec3(0.0, 0.0, -2.5));
 
@@ -155,25 +188,19 @@ void DisplayScene()
 	matModel = glm::rotate(matModel, angleY, glm::vec3(0.0, 1.0, 0.0));
 
 
-	// Wlaczenie potoku
-	glUseProgram( idProgram );
+    program.Use();
+    program.SetMatrix("matProj", matProj);
+    program.SetMatrix("matView", matView);
+    program.SetMatrix("matModel", matModel);
 
-		// Przekazujemy macierze modelu, widoku i rzutowania do potoku
-		glUniformMatrix4fv( glGetUniformLocation(idProgram, "matProj"), 1, GL_FALSE, glm::value_ptr(matProj) );
-		glUniformMatrix4fv( glGetUniformLocation(idProgram, "matView"), 1, GL_FALSE, glm::value_ptr(matView) );
-		glUniformMatrix4fv( glGetUniformLocation(idProgram, "matModel"), 1, GL_FALSE, glm::value_ptr(matModel) );
+    monkey.Draw();
+    cube.Draw();
+    car.Draw();
+	terrain.Draw();
 
-		// Uruchamianie potoku (rendering)
-		glBindVertexArray( idVAO );
-		glDrawArrays( GL_TRIANGLES, 0, vertices.size() );
-		glBindVertexArray( 0 );
-
-
-	// Wylaczanie potoku
-	glUseProgram( 0 );
+    program.Stop();
 }
-
-// ---------------------------------------
+//---------------------------------------
 void Initialize()
 {
 
@@ -312,6 +339,12 @@ int main( int argc, char *argv[] )
     GLFWwindow* window = nullptr;
 	Initialize_GLFW(window);
 
+ 	CProgram program("vertex.glsl", "fragment.glsl");
+    CMesh monkey("models/monkey.obj");
+    CMesh palm("models/palm.obj");
+    CMesh cone("models/cone.obj");
+	CMesh terrain("models/terrain.obj");
+
 
 	// Inicjalizacja sceny
 	Initialize();
@@ -324,8 +357,8 @@ int main( int argc, char *argv[] )
 		glfwPollEvents();
 
 		// Render Sceny
-		DisplayScene();
-
+		DisplayScene(program, monkey, palm, cone, terrain);
+		//DisplayScene();
 		glfwSwapBuffers(window);
 	}
 
