@@ -42,12 +42,6 @@ const char *windowTitle = "OpenGL w GLFW (obrot klawiszami WSAD oraz mysza)";
 #include "objloader.hpp"
 
 
-// Identyfikatory obiektow
-GLuint idProgram;	// programu
-GLuint idVAO;		// tablic wierzcholkow
-GLuint idVBO_coord;	// bufor wspolrzednych
-GLuint idVBO_color; // bufor na kolory
-
 
 // Macierze transformacji i rzutowania
 glm::mat4 matProj;
@@ -58,14 +52,6 @@ glm::mat4 matModel;
 float angleY = 0.0f;
 float angleX = 0.0f;
 float distance = 0.0f;
-
-
-// -----------------------------------
-// NOWE: wektory na dane z pliku OBJ
-// -----------------------------------
-std::vector<glm::vec3> vertices;
-std::vector<glm::vec2> uvs;
-std::vector<glm::vec3> normals;
 
 class CMesh
 {
@@ -107,6 +93,13 @@ public:
         glBindVertexArray(0);
     }
 
+	  ~CMesh()
+    {
+        glDeleteBuffers(1, &VBO_vertices);
+        glDeleteBuffers(1, &VBO_normals);
+        glDeleteVertexArrays(1, &VAO);
+    }
+
     void Draw() const
     {
         glBindVertexArray(VAO);
@@ -127,7 +120,10 @@ public:
         glAttachShader(id, LoadShader(GL_FRAGMENT_SHADER, fsPath));
         LinkAndValidateProgram(id);
     }
-
+	~CProgram()
+    {
+        glDeleteProgram(id);
+    }
     void Use() const { glUseProgram(id); }
     void Stop() const { glUseProgram(0); }
 
@@ -172,7 +168,7 @@ public:
 // 	// Wylaczanie potoku
 // 	glUseProgram( 0 );
 // }
-void DisplayScene(CProgram &program, CMesh &monkey, CMesh &cube, CMesh &car, CMesh &terrain) {
+void DisplayScene(CProgram &program, const std::vector<CMesh*> &meshes) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // glm::mat4 matView = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -3));
@@ -193,10 +189,10 @@ void DisplayScene(CProgram &program, CMesh &monkey, CMesh &cube, CMesh &car, CMe
     program.SetMatrix("matView", matView);
     program.SetMatrix("matModel", matModel);
 
-    monkey.Draw();
-    cube.Draw();
-    car.Draw();
-	terrain.Draw();
+    for (CMesh* mesh : meshes)
+    {
+        mesh->Draw();
+    }
 
     program.Stop();
 }
@@ -210,47 +206,10 @@ void Initialize()
 
 	// Obliczanie macierzy rzutowania perspektywicznego
 	// za pierwszym razem (po utworzeniu okna aplikacji)
-	if (windowHeight != 0)
+	if (windowHeight != 0) {
 		matProj = glm::perspective(glm::radians(80.0f), windowWidth/(float)windowHeight, 0.1f, 50.0f);
-
-
-
-	// ---------------------------------
-	// NOWE: Wczytanie pliku OBJ
-	// ---------------------------------
-	if (!loadOBJ("models/monkey.obj", vertices, uvs, normals))
-	{
-		printf("File not loaded!\n");
 	}
-
-
-
-	// Potok
-	idProgram = glCreateProgram();
-	glAttachShader( idProgram, LoadShader(GL_VERTEX_SHADER, "vertex.glsl"));
-	glAttachShader( idProgram, LoadShader(GL_FRAGMENT_SHADER, "fragment.glsl"));
-	LinkAndValidateProgram( idProgram );
-
-
-	// -----------------------------------------------
-	// NOWE: Wykorzystamy dane wczytane z pliku OBJ
-	// do stworzenia buforow w VAO
-	// -----------------------------------------------
-	glGenVertexArrays( 1, &idVAO );
-	glBindVertexArray( idVAO );
-		// Bufor na wspolrzedne wierzcholkow
-		glGenBuffers( 1, &idVBO_coord );
-		glBindBuffer( GL_ARRAY_BUFFER, idVBO_coord );
-		glBufferData( GL_ARRAY_BUFFER, sizeof( glm::vec3 ) * vertices.size(), &vertices[0], GL_STATIC_DRAW );
-		glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, NULL );
-		glEnableVertexAttribArray( 0 );
-		// Bufor na kolory wierzcholkow z wektorow normalnych obiektu
-		glGenBuffers( 1, &idVBO_color );
-		glBindBuffer( GL_ARRAY_BUFFER, idVBO_color );
-		glBufferData( GL_ARRAY_BUFFER, sizeof( glm::vec3 ) * normals.size(), &normals[0], GL_STATIC_DRAW );
-		glVertexAttribPointer( 1, 3, GL_FLOAT, GL_FALSE, 0, NULL );
-		glEnableVertexAttribArray( 1 );
-	glBindVertexArray( 0 );
+		
 
 }
 
@@ -303,7 +262,12 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 		case GLFW_KEY_A:
 			angleY -= 0.1f;
 			break;
-
+		case GLFW_KEY_KP_ADD: 
+			distance += 0.2f;
+    		break;
+		case GLFW_KEY_KP_SUBTRACT: 
+    		distance -= 0.2f;
+    		break;
 		default:
 			printf("Nacisnieto klawisz %d \n", key);
 			break;
@@ -345,6 +309,12 @@ int main( int argc, char *argv[] )
     CMesh cone("models/cone.obj");
 	CMesh terrain("models/terrain.obj");
 
+    std::vector<CMesh*> meshes = {
+        &monkey,
+        &palm,
+        &cone,
+        &terrain
+    };
 
 	// Inicjalizacja sceny
 	Initialize();
@@ -357,17 +327,13 @@ int main( int argc, char *argv[] )
 		glfwPollEvents();
 
 		// Render Sceny
-		DisplayScene(program, monkey, palm, cone, terrain);
+		DisplayScene(program, meshes);
 		//DisplayScene();
 		glfwSwapBuffers(window);
 	}
 
 
-	// Czyszczenie
-	glDeleteProgram( idProgram );
-	glDeleteVertexArrays( 1, &idVBO_coord );
-	glDeleteVertexArrays( 1, &idVBO_color );
-	glDeleteVertexArrays( 1, &idVAO );
+
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	exit(EXIT_SUCCESS);
