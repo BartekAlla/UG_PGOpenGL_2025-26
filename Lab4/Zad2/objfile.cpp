@@ -45,6 +45,7 @@ glm::mat4 matModel;
 float angleY = 0.0f;
 float angleX = 0.0f;
 float distance = 0.0f;
+float orbitAngle = 0.0f;
 
 class CMesh
 {
@@ -113,6 +114,10 @@ public:
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, vertexCount);
         glBindVertexArray(0);
+    }
+    void RotateAroundAxis(float angle, const glm::vec3& axis)
+    {
+    rotation += axis * angle;
     }
 };
 
@@ -285,35 +290,42 @@ int main( int argc, char *argv[] )
 
  	CProgram program("vertex.glsl", "fragment.glsl");
     CMesh monkey("../models/monkey.obj");
-    monkey.position = glm::vec3(0.0f, 1.1f, -5.5f);
-    monkey.scale    = glm::vec3(2.0f);
+    monkey.position = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 colorMonkey  = glm::vec3(1.0f, 0.5f, 0.1f); 
-    CMesh palm("../models/palm.obj");
-    palm.position = glm::vec3(2.0f, -1.0f, 0.0f);
-    glm::vec3 colorPalm    = glm::vec3(0.2f, 0.7f, 0.2f); 
-    CMesh cactus("../models/kaktus.obj");
-    cactus.position = glm::vec3(-2.0f, -1.0f, 0.0f);
-    glm::vec3 colorCactus  = glm::vec3(0.1f, 0.8f, 0.3f); 
-	CMesh terrain("../models/terrain.obj");
-    terrain.position = glm::vec3(0.0f, -1.0f, 0.0f);
-    glm::vec3 colorTerrain = glm::vec3(0.4f, 0.3f, 0.1f); 
-    CMesh rock("../models/rock.obj");
-    rock.position = glm::vec3(4.5f, -1.0f, 0.5f);
-    glm::vec3 colorRock    = glm::vec3(0.5f, 0.5f, 0.5f); 
+    CMesh cone1("../models/cone.obj");
+    cone1.position = glm::vec3(3.0f, 0.0f, 0.0f);
+    cone1.rotation.z = glm::radians(-90.0f);
+    glm::vec3 cone1Color    = glm::vec3(0.2f, 0.7f, 0.2f); 
+    CMesh cone2("../models/cone.obj");
+    cone2.position = glm::vec3(-3.0f, 0.0f, 0.0f);
+    cone2.rotation.z = glm::radians(90.0f);
+    glm::vec3 cone2Color  = glm::vec3(0.1f, 0.8f, 0.3f); 
+	CMesh cone3("../models/cone.obj");
+    cone3.position = glm::vec3(0.0f, 3.0f, 0.0f);
+    glm::vec3 cone3Color = glm::vec3(0.4f, 0.3f, 0.1f); 
+    CMesh cone4("../models/cone.obj");
+    cone4.position = glm::vec3(0.0f, -3.0f, 0.0f);  
+    glm::vec3 cone4Color    = glm::vec3(0.5f, 0.5f, 0.5f); 
+    cone4.rotation.x = glm::radians(180.0f);
+
+    cone1.scale = glm::vec3(1.0f, 2.0f, 1.0f);
+    cone2.scale = glm::vec3(1.0f, 2.0f, 1.0f);
+    cone3.scale = glm::vec3(1.0f, 2.0f, 1.0f); 
+    cone4.scale = glm::vec3(1.0f, 2.0f, 1.0f); 
 
     std::vector<CMesh*> meshes = {
         &monkey,
-        &palm,
-        &cactus,
-        &terrain,
-        &rock
+        &cone1,
+        &cone2,
+        &cone3,
+        &cone4
     };
     std::vector<glm::vec3> colors = {
         colorMonkey,
-        colorPalm,
-        colorCactus,
-        colorTerrain,
-        colorRock
+        cone1Color,
+        cone2Color,
+        cone3Color,
+        cone4Color
     };
 	Initialize();
 
@@ -328,12 +340,9 @@ int main( int argc, char *argv[] )
         glUseProgram(0);
 		DisplayScene(program, meshes, colors);
         monkey.rotation.y += 0.01f;
-        cactus.rotation.y -= 0.02f;
+        orbitAngle += 0.01f;
 		glfwSwapBuffers(window);
 	}
-
-
-
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	exit(EXIT_SUCCESS);

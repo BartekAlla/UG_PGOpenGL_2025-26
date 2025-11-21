@@ -16,10 +16,11 @@ void main()
     float diff = max(dot(N, L), 0.0);
     float h = clamp((vWorldPos.y + 2.0) / 4.0, 0.0, 1.0);
     vec3 baseGradient = mix(objectColor * 0.3, objectColor, h);
-    if (objectColor == vec3(0.4, 0.3, 0.1)) { 
+    if (objectColor == vec3(0.4, 0.3, 0.1)) {
         float pulse = sin(time * 2.0) * 0.5 + 0.5; 
         baseGradient = mix(baseGradient, vec3(0.0, 1.0, 0.0), pulse); 
     }
     vec3 finalColor = baseGradient * (0.4 + diff * 0.6);
+
     outColor = vec4(finalColor, 1.0);
 }
