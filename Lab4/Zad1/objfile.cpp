@@ -46,11 +46,13 @@ float distance = 0.0f;
 
 class CMesh
 {
-public:
+private:
     GLuint VAO;
     GLuint VBO_vertices;
     GLuint VBO_normals;
     size_t vertexCount;
+
+public:
     glm::vec3 position = glm::vec3(0.0f);
     glm::vec3 rotation = glm::vec3(0.0f); 
     glm::vec3 scale    = glm::vec3(1.0f);
@@ -112,12 +114,15 @@ public:
         glDrawArrays(GL_TRIANGLES, 0, vertexCount);
         glBindVertexArray(0);
     }
+   
 };
 
 class CProgram
 {
-public:
+private:
+
     GLuint id;
+public:
 
     CProgram(const char* vsPath, const char* fsPath)
     {
@@ -141,6 +146,13 @@ public:
     void SetMatrix(const char* name, const glm::mat4& mat) const
     {
         glUniformMatrix4fv(glGetUniformLocation(id, name), 1, GL_FALSE, glm::value_ptr(mat));
+    }
+     GLuint getProgramID() {
+        return this->id;
+    }
+    void SetFloat(const char* name, float v)
+    {
+        glUniform1f(glGetUniformLocation(id, name), v);
     }
 };
 
@@ -318,8 +330,8 @@ int main( int argc, char *argv[] )
 	{
 		glfwPollEvents();
         float currentTime = glfwGetTime();
-        glUseProgram(program.id);
-        glUniform1f(glGetUniformLocation(program.id, "time"), currentTime);
+        glUseProgram(program.getProgramID());
+        program.SetFloat("time", currentTime);
         glUseProgram(0);
 		DisplayScene(program, meshes, colors);
         monkey.rotation.y += 0.01f;
