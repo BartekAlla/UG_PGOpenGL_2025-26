@@ -46,7 +46,7 @@ float angleY = 0.0f;
 float angleX = 0.0f;
 float distance = 0.0f;
 float orbitAngle = 0.0f;
-
+float R = 3.0f;
 class CMesh
 {
 public:
@@ -115,9 +115,24 @@ public:
         glDrawArrays(GL_TRIANGLES, 0, vertexCount);
         glBindVertexArray(0);
     }
-    void RotateAroundAxis(float angle, const glm::vec3& axis)
+    void ChangePosition(const glm::vec3& newPos)
     {
-    rotation += axis * angle;
+        position = newPos;
+    }
+    void OrbitAroundPoint(const glm::vec3& center, float radius, float orbitAngle, float offsetAngle)
+    {
+        float x = center.x + radius * cos(orbitAngle + offsetAngle);
+        float y = center.y + radius * sin(orbitAngle + offsetAngle);
+        float z = center.z;
+        position = glm::vec3(x, y, z);
+
+        glm::vec3 dirToCenter = center - position;
+        float angle = atan2(dirToCenter.y, dirToCenter.x);
+        rotation.z = angle - glm::radians(-90.0f); 
+    }
+    glm::vec3 GetPosition() const
+    {
+        return position;
     }
 };
 
@@ -157,7 +172,7 @@ void DisplayScene(CProgram &program, const std::vector<CMesh*> &meshes, const st
     matView = glm::mat4(1.0f);
 
     // zoom
-    matView = glm::translate(matView, glm::vec3(0.0f, 0.0f, -4.0f - distance));
+    matView = glm::translate(matView, glm::vec3(0.0f, 0.0f, -10.0f - distance));
 
     // obrót kamery
     matView = glm::rotate(matView, angleX, glm::vec3(1,0,0));
@@ -181,7 +196,7 @@ void DisplayScene(CProgram &program, const std::vector<CMesh*> &meshes, const st
 
     program.Stop();
 }
-//---------------------------------------
+
 void Initialize()
 {
 
@@ -260,15 +275,14 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 	}
 }
 
-// ---------------------------------------------------
-// funkcja zwrotna do obslugi scrolla myszy
+//obsługa scrolla
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	 distance -= yoffset;
 }
 
-// --------------------------------------------------------------
-// funkcja zwrotna do obslugi ruchu kursora myszy
+
+// obsługa kursora
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
 	if (__mouse_press && __mouse_button == GLFW_MOUSE_BUTTON_LEFT)
@@ -280,8 +294,6 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 	}
 }
 
-
-// ---------------------------------------------------
 int main( int argc, char *argv[] )
 {
 	// Kontekst i okno aplikacji
@@ -293,25 +305,21 @@ int main( int argc, char *argv[] )
     monkey.position = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 colorMonkey  = glm::vec3(1.0f, 0.5f, 0.1f); 
     CMesh cone1("../models/cone.obj");
-    cone1.position = glm::vec3(3.0f, 0.0f, 0.0f);
-    cone1.rotation.z = glm::radians(-90.0f);
+    cone1.position = glm::vec3(R, 0.0f, 0.0f);
+    cone1.scale = glm::vec3(1.0f, 2.0f, 1.0f);
     glm::vec3 cone1Color    = glm::vec3(0.2f, 0.7f, 0.2f); 
     CMesh cone2("../models/cone.obj");
-    cone2.position = glm::vec3(-3.0f, 0.0f, 0.0f);
-    cone2.rotation.z = glm::radians(90.0f);
-    glm::vec3 cone2Color  = glm::vec3(0.1f, 0.8f, 0.3f); 
-	CMesh cone3("../models/cone.obj");
-    cone3.position = glm::vec3(0.0f, 3.0f, 0.0f);
-    glm::vec3 cone3Color = glm::vec3(0.4f, 0.3f, 0.1f); 
-    CMesh cone4("../models/cone.obj");
-    cone4.position = glm::vec3(0.0f, -3.0f, 0.0f);  
-    glm::vec3 cone4Color    = glm::vec3(0.5f, 0.5f, 0.5f); 
-    cone4.rotation.x = glm::radians(180.0f);
-
-    cone1.scale = glm::vec3(1.0f, 2.0f, 1.0f);
+    cone2.position = glm::vec3(-R, 0.0f, 0.0f);
     cone2.scale = glm::vec3(1.0f, 2.0f, 1.0f);
+    glm::vec3 cone2Color  = glm::vec3(0.2f, 0.7f, 0.2f); 
+	CMesh cone3("../models/cone.obj");
+    cone3.position = glm::vec3(0.0f, R, 0.0f);
     cone3.scale = glm::vec3(1.0f, 2.0f, 1.0f); 
+    glm::vec3 cone3Color = glm::vec3(0.2f, 0.7f, 0.2f); 
+    CMesh cone4("../models/cone.obj");
+    cone4.position = glm::vec3(0.0f, -R, 0.0f);  
     cone4.scale = glm::vec3(1.0f, 2.0f, 1.0f); 
+    glm::vec3 cone4Color    = glm::vec3(0.2f, 0.7f, 0.2f); 
 
     std::vector<CMesh*> meshes = {
         &monkey,
@@ -338,8 +346,13 @@ int main( int argc, char *argv[] )
         glUseProgram(program.id);
         glUniform1f(glGetUniformLocation(program.id, "time"), currentTime);
         glUseProgram(0);
+    
+        cone1.OrbitAroundPoint(monkey.GetPosition(), R, orbitAngle, 0.0f);
+        cone2.OrbitAroundPoint(monkey.GetPosition(), R, orbitAngle, glm::radians(90.0f));
+        cone3.OrbitAroundPoint(monkey.GetPosition(), R, orbitAngle, glm::radians(180.0f));
+        cone4.OrbitAroundPoint(monkey.GetPosition(), R, orbitAngle, glm::radians(270.0f));
 		DisplayScene(program, meshes, colors);
-        monkey.rotation.y += 0.01f;
+        monkey.rotation.y += 0.05f;
         orbitAngle += 0.01f;
 		glfwSwapBuffers(window);
 	}

@@ -36,8 +36,6 @@ const char *windowTitle = "OpenGL w GLFW (obrot klawiszami WSAD oraz mysza)";
 #include "utilities.hpp"
 #include "objloader.hpp"
 
-
-
 glm::mat4 matProj;
 glm::mat4 matView;
 glm::mat4 matModel;
@@ -75,7 +73,7 @@ public:
 
         glGenBuffers(1, &VBO_vertices);
         glBindBuffer(GL_ARRAY_BUFFER, VBO_vertices);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
         glEnableVertexAttribArray(0);
 
@@ -255,15 +253,13 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 	}
 }
 
-// ---------------------------------------------------
-// funkcja zwrotna do obslugi scrolla myszy
+//obsługa scrolla
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	 distance -= yoffset;
 }
 
-// --------------------------------------------------------------
-// funkcja zwrotna do obslugi ruchu kursora myszy
+// obsługa kursora
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
 	if (__mouse_press && __mouse_button == GLFW_MOUSE_BUTTON_LEFT)
@@ -276,7 +272,6 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 }
 
 
-// ---------------------------------------------------
 int main( int argc, char *argv[] )
 {
 	// Kontekst i okno aplikacji
