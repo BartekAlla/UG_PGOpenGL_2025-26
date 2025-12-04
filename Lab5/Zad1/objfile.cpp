@@ -23,7 +23,8 @@
 
 #include <iostream>
 #include <vector>
-
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 // Bibliteka GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -51,7 +52,8 @@ private:
     GLuint VBO_vertices;
     GLuint VBO_normals;
     size_t vertexCount;
-
+    GLuint VBO_uv = 0;     
+    GLuint textureID = 0;  
 public:
     glm::vec3 position = glm::vec3(0.0f);
     glm::vec3 rotation = glm::vec3(0.0f); 
@@ -85,6 +87,12 @@ public:
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
         glEnableVertexAttribArray(1);
 
+        glGenBuffers(1, &VBO_uv);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO_uv);
+        glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+        glEnableVertexAttribArray(2);
+        
         glBindVertexArray(0);
     }
 
@@ -108,13 +116,51 @@ public:
 
         return model;
     }
-    void Draw() const
+    void Draw(GLuint shaderProgram) const
     {
+         if (textureID != 0)
+        {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, textureID);
+            glUniform1i(glGetUniformLocation(shaderProgram, "textureSampler"), 0);
+        }
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, vertexCount);
         glBindVertexArray(0);
     }
-   
+   bool LoadTexture(const char* filepath)
+{
+    int texWidth, texHeight, texChannels;
+    unsigned char* texData;
+
+    stbi_set_flip_vertically_on_load(true);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    texData = stbi_load(filepath, &texWidth, &texHeight, &texChannels, 0);
+    if (!texData)
+    {
+        std::cout << "ERROR: Cannot load texture file: " << filepath << std::endl;
+        return false;
+    }
+
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    GLenum format = texChannels == 4 ? GL_RGBA : GL_RGB;
+
+    glTexImage2D(GL_TEXTURE_2D, 0, format,
+        texWidth, texHeight, 0,
+        format, GL_UNSIGNED_BYTE, texData);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    stbi_image_free(texData);
+
+    return true;
+}
 };
 
 class CProgram
@@ -181,7 +227,7 @@ void DisplayScene(CProgram &program, const std::vector<CMesh*> &meshes, const st
 
         program.SetVec3("objectColor", colors[i]);
 
-        mesh->Draw();
+        mesh->Draw(program.getProgramID());
     }
 
     program.Stop();
@@ -294,19 +340,24 @@ int main( int argc, char *argv[] )
     CMesh monkey("../models/monkey.obj");
     monkey.position = glm::vec3(0.0f, 1.1f, -5.5f);
     monkey.scale    = glm::vec3(2.0f);
-    glm::vec3 colorMonkey  = glm::vec3(1.0f, 0.5f, 0.1f); 
+    glm::vec3 colorMonkey  = glm::vec3(1.0f, 0.5f, 0.1f);
+    monkey.LoadTexture("../textures/monkey.png"); 
     CMesh palm("../models/palm.obj");
     palm.position = glm::vec3(2.0f, -1.0f, 0.0f);
     glm::vec3 colorPalm    = glm::vec3(0.2f, 0.7f, 0.2f); 
+    palm.LoadTexture("../textures/palm.png");
     CMesh cactus("../models/kaktus.obj");
     cactus.position = glm::vec3(-2.0f, -1.0f, 0.0f);
     glm::vec3 colorCactus  = glm::vec3(0.1f, 0.8f, 0.3f); 
+    cactus.LoadTexture("../textures/kaktus.jpg");
 	CMesh terrain("../models/terrain.obj");
     terrain.position = glm::vec3(0.0f, -1.0f, 0.0f);
     glm::vec3 colorTerrain = glm::vec3(0.4f, 0.3f, 0.1f); 
+    terrain.LoadTexture("../textures/terrain.jpg");
     CMesh rock("../models/rock.obj");
     rock.position = glm::vec3(4.5f, -1.0f, 0.5f);
     glm::vec3 colorRock    = glm::vec3(0.5f, 0.5f, 0.5f); 
+    rock.LoadTexture("../textures/rock.png");
 
     std::vector<CMesh*> meshes = {
         &monkey,
@@ -329,9 +380,7 @@ int main( int argc, char *argv[] )
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
-        float currentTime = glfwGetTime();
         glUseProgram(program.getProgramID());
-        program.SetFloat("time", currentTime);
         glUseProgram(0);
 		DisplayScene(program, meshes, colors);
         monkey.rotation.y += 0.01f;

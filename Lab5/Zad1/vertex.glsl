@@ -1,10 +1,10 @@
 #version 330 core
 
-layout(location = 0) in vec3 inPosition;
+layout(location = 0) in vec3 inPos;
 layout(location = 1) in vec3 inNormal;
+layout(location = 2) in vec2 inUV;   
 
-out vec3 vNormal;
-out vec3 vWorldPos;
+out vec2 fragUV;                     
 
 uniform mat4 matProj;
 uniform mat4 matView;
@@ -12,8 +12,6 @@ uniform mat4 matModel;
 
 void main()
 {
-    vNormal   = mat3(matModel) * inNormal;
-    vWorldPos = vec3(matModel * vec4(inPosition, 1.0));
-
-    gl_Position = matProj * matView * matModel * vec4(inPosition, 1.0);
+    fragUV = inUV;                   
+    gl_Position = matProj * matView * matModel * vec4(inPos, 1.0);
 }
