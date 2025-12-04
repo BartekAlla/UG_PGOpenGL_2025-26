@@ -336,28 +336,28 @@ int main( int argc, char *argv[] )
     GLFWwindow* window = nullptr;
 	Initialize_GLFW(window);
 
- 	CProgram program("vertex.glsl", "fragment.glsl");
+ 	CProgram program("../shaders/vertex.glsl", "../shaders/fragment.glsl");
     CMesh monkey("../models/monkey.obj");
     monkey.position = glm::vec3(0.0f, 1.1f, -5.5f);
     monkey.scale    = glm::vec3(2.0f);
     glm::vec3 colorMonkey  = glm::vec3(1.0f, 0.5f, 0.1f);
-    monkey.LoadTexture("../textures/monkey.png"); 
+    monkey.LoadTexture("../assets/monkey.png"); 
     CMesh palm("../models/palm.obj");
     palm.position = glm::vec3(2.0f, -1.0f, 0.0f);
     glm::vec3 colorPalm    = glm::vec3(0.2f, 0.7f, 0.2f); 
-    palm.LoadTexture("../textures/palm.png");
+    palm.LoadTexture("../assets/palm.png");
     CMesh cactus("../models/kaktus.obj");
     cactus.position = glm::vec3(-2.0f, -1.0f, 0.0f);
     glm::vec3 colorCactus  = glm::vec3(0.1f, 0.8f, 0.3f); 
-    cactus.LoadTexture("../textures/kaktus.jpg");
+    cactus.LoadTexture("../assets/kaktus.jpg");
 	CMesh terrain("../models/terrain.obj");
     terrain.position = glm::vec3(0.0f, -1.0f, 0.0f);
     glm::vec3 colorTerrain = glm::vec3(0.4f, 0.3f, 0.1f); 
-    terrain.LoadTexture("../textures/terrain.jpg");
+    terrain.LoadTexture("../assets/terrain.jpg");
     CMesh rock("../models/rock.obj");
     rock.position = glm::vec3(4.5f, -1.0f, 0.5f);
     glm::vec3 colorRock    = glm::vec3(0.5f, 0.5f, 0.5f); 
-    rock.LoadTexture("../textures/rock.png");
+    rock.LoadTexture("../assets/rock.png");
 
     std::vector<CMesh*> meshes = {
         &monkey,
