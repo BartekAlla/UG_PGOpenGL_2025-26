@@ -10,10 +10,10 @@ void main()
 {
     vec4 texColor = texture(textureSampler, fragUV);
 
-
+    if(texColor.a < 0.5) discard;
     //  sama tekstura
-    // outColor = texColor;
-
+     outColor = texColor;
+    
     //  tekstura i kolor
-    outColor = texColor * vec4(objectColor, 1.0);
+    //outColor = texColor * vec4(objectColor, 1.0);
 }

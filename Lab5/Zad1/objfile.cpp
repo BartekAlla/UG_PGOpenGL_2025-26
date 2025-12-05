@@ -45,6 +45,36 @@ float angleY = 0.0f;
 float angleX = 0.0f;
 float distance = 0.0f;
 
+
+
+std::vector<glm::vec3> flowerVertices = {
+    {-0.5f, 0.0f, 0.0f},
+    { 0.5f, 0.0f, 0.0f},
+    { 0.5f, 1.0f, 0.0f},
+
+    {-0.5f, 0.0f, 0.0f},
+    { 0.5f, 1.0f, 0.0f},
+    {-0.5f, 1.0f, 0.0f},
+
+
+    {0.0f, 0.0f, -0.5f},
+    {0.0f, 0.0f,  0.5f},
+    {0.0f, 1.0f,  0.5f},
+
+    {0.0f, 0.0f, -0.5f},
+    {0.0f, 1.0f,  0.5f},
+    {0.0f, 1.0f, -0.5f},
+};
+
+std::vector<glm::vec2> flowerUV = {
+
+    {0,0}, {1,0}, {1,1},
+    {0,0}, {1,1}, {0,1},
+
+    {0,0}, {1,0}, {1,1},
+    {0,0}, {1,1}, {0,1},
+};
+
 class CMesh
 {
 private:
@@ -95,6 +125,35 @@ public:
         
         glBindVertexArray(0);
     }
+    CMesh(const std::vector<glm::vec3>& vertices,
+      const std::vector<glm::vec2>& uvs)
+{
+    vertexCount = vertices.size();
+
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    glGenBuffers(1, &VBO_vertices);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_vertices);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    glEnableVertexAttribArray(0);
+
+    std::vector<glm::vec3> fakeNormals(vertices.size(), glm::vec3(0, 1, 0));
+    glGenBuffers(1, &VBO_normals);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_normals);
+    glBufferData(GL_ARRAY_BUFFER, fakeNormals.size() * sizeof(glm::vec3), fakeNormals.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    glEnableVertexAttribArray(1);
+
+    glGenBuffers(1, &VBO_uv);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_uv);
+    glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), uvs.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+    glEnableVertexAttribArray(2);
+
+    glBindVertexArray(0);
+}
 
 	  ~CMesh()
     {
@@ -239,7 +298,8 @@ void Initialize()
 	// Ustawianie koloru, ktorym bedzie czyszczony bufor koloru
 	glClearColor( 0.5f, 0.5f, 0.5f, 1.0f );
 	glEnable(GL_DEPTH_TEST);
-
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	// Obliczanie macierzy rzutowania perspektywicznego
 	// za pierwszym razem (po utworzeniu okna aplikacji)
 	if (windowHeight != 0) {
@@ -340,24 +400,29 @@ int main( int argc, char *argv[] )
     CMesh monkey("../models/monkey.obj");
     monkey.position = glm::vec3(0.0f, 1.1f, -5.5f);
     monkey.scale    = glm::vec3(2.0f);
-    glm::vec3 colorMonkey  = glm::vec3(1.0f, 0.5f, 0.1f);
+    glm::vec3 colorMonkey;//  = glm::vec3(1.0f, 0.5f, 0.1f);
+
     monkey.LoadTexture("../assets/monkey.png"); 
     CMesh palm("../models/palm.obj");
     palm.position = glm::vec3(2.0f, -1.0f, 0.0f);
-    glm::vec3 colorPalm    = glm::vec3(0.2f, 0.7f, 0.2f); 
+    glm::vec3 colorPalm;//    = glm::vec3(0.2f, 0.7f, 0.2f); 
     palm.LoadTexture("../assets/palm.png");
+    
     CMesh cactus("../models/kaktus.obj");
     cactus.position = glm::vec3(-2.0f, -1.0f, 0.0f);
-    glm::vec3 colorCactus  = glm::vec3(0.1f, 0.8f, 0.3f); 
+    glm::vec3 colorCactus;//  = glm::vec3(0.1f, 0.8f, 0.3f); 
     cactus.LoadTexture("../assets/kaktus.jpg");
-	CMesh terrain("../models/terrain.obj");
+	
+    CMesh terrain("../models/terrain.obj");
     terrain.position = glm::vec3(0.0f, -1.0f, 0.0f);
-    glm::vec3 colorTerrain = glm::vec3(0.4f, 0.3f, 0.1f); 
+    glm::vec3 colorTerrain;// = glm::vec3(0.4f, 0.3f, 0.1f); 
     terrain.LoadTexture("../assets/terrain.jpg");
+    
     CMesh rock("../models/rock.obj");
     rock.position = glm::vec3(4.5f, -1.0f, 0.5f);
-    glm::vec3 colorRock    = glm::vec3(0.5f, 0.5f, 0.5f); 
+    glm::vec3 colorRock;//    = glm::vec3(0.5f, 0.5f, 0.5f); 
     rock.LoadTexture("../assets/rock.png");
+
 
     std::vector<CMesh*> meshes = {
         &monkey,
@@ -373,6 +438,27 @@ int main( int argc, char *argv[] )
         colorTerrain,
         colorRock
     };
+
+
+    CMesh* flowerModel = new CMesh(flowerVertices, flowerUV);
+    flowerModel->LoadTexture("../assets/flower32bit.png");
+
+    std::vector<CMesh*> flowerMeshes;
+
+    for (int i = 0; i < 50; i++)
+    {
+        CMesh* f = new CMesh(*flowerModel); 
+        f->position = glm::vec3((rand() % 50 - 10) / 2.0f, -1.0f, (rand() % 50 - 10) / 2.0f);
+        float angle = (rand() % 360) * 1.0f; 
+        f->rotation = glm::vec3(0.0f, glm::radians(angle), 0.0f);
+        float s = 1.5f + (rand() / (float)RAND_MAX) * 1.0f;
+        f->scale = glm::vec3(s);
+        flowerMeshes.push_back(f);
+    }
+
+    meshes.insert(meshes.end(), flowerMeshes.begin(), flowerMeshes.end());
+
+
 	Initialize();
 
 
