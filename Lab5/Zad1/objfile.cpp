@@ -445,13 +445,13 @@ int main( int argc, char *argv[] )
 
     std::vector<CMesh*> flowerMeshes;
 
-    for (int i = 0; i < 50; i++)
+    for (int i = 0; i < 20; i++)
     {
         CMesh* f = new CMesh(*flowerModel); 
         f->position = glm::vec3((rand() % 50 - 10) / 2.0f, -1.0f, (rand() % 50 - 10) / 2.0f);
         float angle = (rand() % 360) * 1.0f; 
         f->rotation = glm::vec3(0.0f, glm::radians(angle), 0.0f);
-        float s = 1.5f + (rand() / (float)RAND_MAX) * 1.0f;
+        float s = 1.5f + (rand() / (float)RAND_MAX) * 2.0f;
         f->scale = glm::vec3(s);
         flowerMeshes.push_back(f);
     }
