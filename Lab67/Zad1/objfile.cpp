@@ -31,24 +31,21 @@
 #include <glm/gtc/type_ptr.hpp>
 
 // Okno aplikacji
-int windowWidth = 800, windowHeight = 800;
+int windowWidth = 1500, windowHeight = 900;
 const char *windowTitle = "OpenGL w GLFW (obrot klawiszami WSAD oraz mysza)";
 
 #include "utilities.hpp"
 #include "objloader.hpp"
+#include "../camera/camera.hpp"
+
 
 glm::mat4 matProj;
-glm::mat4 matView;
 glm::mat4 matModel;
-
-float angleY = 0.0f;
-float angleX = 0.0f;
-float distance = 0.0f;
 
 float monkeyOrbitAngle = 0.0f;   // aktualny kąt ruchu
 float monkeyOrbitRadius = 7.0f;  // promień okręgu
 float monkeyOrbitSpeed = 0.01f;  // prędkość ruchu
-
+Camera camera;
 
 std::vector<glm::vec3> flowerVertices = {
     {-0.5f, 0.0f, 0.0f},
@@ -266,15 +263,8 @@ public:
 
 void DisplayScene(CProgram &program, const std::vector<CMesh*> &meshes, const std::vector<glm::vec3> &colors) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    // kamera
-    matView = glm::mat4(1.0f);
-
-    // zoom
-    matView = glm::translate(matView, glm::vec3(0.0f, 0.0f, -4.0f - distance));
-
-    // obrót kamery
-    matView = glm::rotate(matView, angleX, glm::vec3(1,0,0));
-    matView = glm::rotate(matView, angleY, glm::vec3(0,1,0));
+    glm::mat4 matView = camera.GetViewMatrix();
+    program.SetMatrix("matView", matView);
 
     program.Use();
     program.SetMatrix("matProj", matProj);
@@ -340,56 +330,42 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 {
 	if (action == GLFW_PRESS)
 	{
-		switch(key)
-		{
-		case GLFW_KEY_ESCAPE:
-			glfwSetWindowShouldClose(window, GLFW_TRUE);
-			break;
-
-		case GLFW_KEY_W:
-			angleX += 0.1f;
-			break;
-
-		case GLFW_KEY_S:
-			angleX -= 0.1f;
-			break;
-
-		case GLFW_KEY_D:
-			angleY += 0.1f;
-			break;
-
-		case GLFW_KEY_A:
-			angleY -= 0.1f;
-			break;
-		case GLFW_KEY_KP_ADD: 
-			distance -= 0.2f;
-    		break;
-		case GLFW_KEY_KP_SUBTRACT: 
-    		distance += 0.2f;
-    		break;
-		default:
-			printf("Nacisnieto klawisz %d \n", key);
-			break;
-		}
+         if (action == GLFW_PRESS)
+        {
+            if (key == GLFW_KEY_ESCAPE) {
+                printf("Nacisnieto klawisz %d \n", key);
+                glfwSetWindowShouldClose(window, GLFW_TRUE);
+            }
+                
+            else {
+                printf("Nacisnieto klawisz %d \n", key);
+                camera.ProcessKeyboard(key);
+            }
+        }
 	}
 }
 
 //obsługa scrolla
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-	 distance -= yoffset;
+    camera.ProcessScroll(yoffset);
 }
 
 // obsługa kursora
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
-	if (__mouse_press && __mouse_button == GLFW_MOUSE_BUTTON_LEFT)
-	{
-		angleX += (ypos - __mouse_buttonY)/(float)windowWidth;
-		angleY += (xpos - __mouse_buttonX)/(float)windowHeight;
+    if (__mouse_press && __mouse_button == GLFW_MOUSE_BUTTON_LEFT)
+    {
+        camera.ProcessMouseDrag(
+            xpos - __mouse_buttonX,
+            ypos - __mouse_buttonY,
+            windowWidth,
+            windowHeight
+        );
+
         __mouse_buttonX = xpos;
         __mouse_buttonY = ypos;
-	}
+    }
 }
 
 
@@ -403,7 +379,6 @@ int main( int argc, char *argv[] )
     CMesh monkey("../models/monkey.obj");
     glm::vec3 monkeyCenter = glm::vec3(0.0f, 1.1f, -5.5f);
     monkey.position = monkeyCenter;
-    //monkey.position = glm::vec3(0.0f, 1.1f, -5.5f);
     monkey.scale    = glm::vec3(2.0f);
     glm::vec3 colorMonkey;//  = glm::vec3(1.0f, 0.5f, 0.1f);
 
