@@ -17,6 +17,10 @@
 // Opengl 4.5. W razie problemow nalezy podmienic
 // skonfigurowac glada pod swoje srodowisko.
 // -------------------------------------------------
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
+
 #include <stdio.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -38,7 +42,7 @@ const char *windowTitle = "OpenGL w GLFW (obrot klawiszami WSAD oraz mysza)";
 //#include "objloader.hpp"
 #include "camera/Camera.hpp"
 #include "object/Mesh.hpp"
-
+#include "imgui/GUI/GUIManager.hpp"
 
 
 
@@ -231,6 +235,16 @@ int main( int argc, char *argv[] )
     GLFWwindow* window = nullptr;
 	Initialize_GLFW(window);
 
+    // ImGui setup
+    // IMGUI_CHECKVERSION();
+    // ImGui::CreateContext();
+    // ImGuiIO& io = ImGui::GetIO(); (void)io;
+    // ImGui::StyleColorsDark();
+    // ImGui_ImplGlfw_InitForOpenGL(window, true);
+    // ImGui_ImplOpenGL3_Init("#version 450"); 
+    GUIManager gui(window);
+
+
  	CProgram program("shaders/vertex.glsl", "shaders/fragment.glsl");
 
     Mesh monkey("../models/monkey.obj");
@@ -277,23 +291,23 @@ int main( int argc, char *argv[] )
     };
 
 
-    // CMesh* flowerModel = new CMesh(flowerVertices, flowerUV);
-    // flowerModel->LoadTexture("../assets/flower32bit.png");
+    Mesh* flowerModel = new Mesh(flowerVertices, flowerUV);
+    flowerModel->LoadTexture("../assets/flower32bit.png");
 
-    // std::vector<CMesh*> flowerMeshes;
+    std::vector<Mesh*> flowerMeshes;
 
-    // for (int i = 0; i < 20; i++)
-    // {
-    //     CMesh* f = new CMesh(*flowerModel); 
-    //     f->position = glm::vec3((rand() % 50 - 10) / 2.0f, -1.0f, (rand() % 50 - 10) / 2.0f);
-    //     float angle = (rand() % 360) * 1.0f; 
-    //     f->rotation = glm::vec3(0.0f, glm::radians(angle), 0.0f);
-    //     float s = 1.5f + (rand() / (float)RAND_MAX) * 2.0f;
-    //     f->scale = glm::vec3(s);
-    //     flowerMeshes.push_back(f);
-    // }
+    for (int i = 0; i < 20; i++)
+    {
+        Mesh* f = new Mesh(*flowerModel); 
+        f->transform.position = glm::vec3((rand() % 50 - 10) / 2.0f, -1.0f, (rand() % 50 - 10) / 2.0f);
+        float angle = (rand() % 360) * 1.0f; 
+        f->transform.rotation = glm::vec3(0.0f, glm::radians(angle), 0.0f);
+        float s = 1.5f + (rand() / (float)RAND_MAX) * 2.0f;
+        f->transform.scale = glm::vec3(s);
+        flowerMeshes.push_back(f);
+    }
 
-    // meshes.insert(meshes.end(), flowerMeshes.begin(), flowerMeshes.end());
+    meshes.insert(meshes.end(), flowerMeshes.begin(), flowerMeshes.end());
 
 
 	Initialize();
@@ -305,9 +319,28 @@ int main( int argc, char *argv[] )
 		glfwPollEvents();
         glUseProgram(program.getProgramID());
         glUseProgram(0);
+
+        gui.StartFrame();
+        gui.RenderFrame();
+
 		DisplayScene(program, meshes, colors);
+        
+        gui.EndFrame();
+        // // ImGui
+        // ImGui_ImplOpenGL3_NewFrame();
+        // ImGui_ImplGlfw_NewFrame();
+        // ImGui::NewFrame();
+        // ImGui::Begin("Kontrola sceny");
+        // ImGui::Text("Przykładowe parametry:");
+        // ImGui::SliderFloat("Kąt obrotu małpy", &monkeyOrbitAngle, 0.0f, 6.28f);
+        // ImGui::End();
+        // ImGui::Render();
+        // ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        
+        monkeyOrbitAngle = gui.monkeyAngle;
+
         monkey.transform.rotation.y += 0.03f;
-        monkeyOrbitAngle += monkeyOrbitSpeed;
+        //monkeyOrbitAngle += monkeyOrbitSpeed;
         monkey.transform.position.x = monkeyCenter.x + cos(monkeyOrbitAngle) * monkeyOrbitRadius;
         monkey.transform.position.z = monkeyCenter.z + sin(monkeyOrbitAngle) * monkeyOrbitRadius;
         cactus.transform.rotation.y -= 0.02f;
@@ -315,8 +348,12 @@ int main( int argc, char *argv[] )
 	}
 
 
-
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	exit(EXIT_SUCCESS);
+
+    // ImGui cleanup
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 }
