@@ -1,7 +1,7 @@
 #include "Mesh.hpp"
 #include <iostream>
 #include "stb_image.h"
-#include "../Zad1/objloader.hpp"
+#include "../objloader.hpp"
 
 Mesh::Mesh(const char* objPath)
 {

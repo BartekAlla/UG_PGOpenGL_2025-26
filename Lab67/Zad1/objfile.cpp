@@ -36,8 +36,10 @@ const char *windowTitle = "OpenGL w GLFW (obrot klawiszami WSAD oraz mysza)";
 
 #include "utilities.hpp"
 //#include "objloader.hpp"
-#include "../camera/camera.hpp"
-#include "../object/Mesh.hpp"
+#include "camera/Camera.hpp"
+#include "object/Mesh.hpp"
+
+
 
 
 glm::mat4 matProj;
@@ -229,7 +231,7 @@ int main( int argc, char *argv[] )
     GLFWwindow* window = nullptr;
 	Initialize_GLFW(window);
 
- 	CProgram program("../shaders/vertex.glsl", "../shaders/fragment.glsl");
+ 	CProgram program("shaders/vertex.glsl", "shaders/fragment.glsl");
 
     Mesh monkey("../models/monkey.obj");
     glm::vec3 monkeyCenter = glm::vec3(0.0f, 1.1f, -5.5f);
@@ -304,16 +306,11 @@ int main( int argc, char *argv[] )
         glUseProgram(program.getProgramID());
         glUseProgram(0);
 		DisplayScene(program, meshes, colors);
-        //monkey.rotation.y += 0.03f;
         monkey.transform.rotation.y += 0.03f;
         monkeyOrbitAngle += monkeyOrbitSpeed;
-        // monkey.position.x = monkeyCenter.x + cos(monkeyOrbitAngle) * monkeyOrbitRadius;
-        // monkey.position.z = monkeyCenter.z + sin(monkeyOrbitAngle) * monkeyOrbitRadius;
-        monkey.transform.position.x =
-        monkeyCenter.x + cos(monkeyOrbitAngle) * monkeyOrbitRadius;
-        monkey.transform.position.z =
-        monkeyCenter.z + sin(monkeyOrbitAngle) * monkeyOrbitRadius;
-        //cactus.rotation.y -= 0.02f;
+        monkey.transform.position.x = monkeyCenter.x + cos(monkeyOrbitAngle) * monkeyOrbitRadius;
+        monkey.transform.position.z = monkeyCenter.z + sin(monkeyOrbitAngle) * monkeyOrbitRadius;
+        cactus.transform.rotation.y -= 0.02f;
 		glfwSwapBuffers(window);
 	}
 
