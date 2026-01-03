@@ -124,8 +124,7 @@ public:
 void DisplayScene(  CProgram& program,
                     const std::vector<Mesh*>& meshes,
                     const std::vector<glm::vec3>& colors,
-                    bool enablePointLight,
-                    int lightingModel  // 0 = Phong, 1 = Blinn-Phong
+                    GUIManager& gui
                     )
                     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -138,8 +137,8 @@ void DisplayScene(  CProgram& program,
     program.SetMatrix("matView", matView);
 
     program.SetVec3("cameraPos", cameraPos);
-    program.SetFloat("enablePointLight", enablePointLight ? 1.0f : 0.0f);
-    program.SetFloat("lightingModel", (float)lightingModel);
+    program.SetFloat("enablePointLight", gui.enablePointLight ? 1.0f : 0.0f);
+    program.SetFloat("lightingModel", (float)gui.lightingModel);
     for (int i = 0; i < meshes.size(); i++)
     {
         program.SetMatrix("matModel", meshes[i]->transform.GetMatrix());
@@ -320,7 +319,7 @@ int main( int argc, char *argv[] )
         gui.StartFrame();
         gui.RenderFrame();
 
-		DisplayScene(program, meshes, colors, gui.enablePointLight, gui.lightingModel);
+		DisplayScene(program, meshes, colors,gui);
         
         gui.EndFrame();
         
