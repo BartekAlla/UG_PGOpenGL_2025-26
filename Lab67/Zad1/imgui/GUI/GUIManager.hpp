@@ -17,4 +17,7 @@ public:
     void EndFrame();
 
     float monkeyAngle = 0.0f;
+    bool enablePointLight = true;
+    // 0 = Phong, 1 = Blinn-Phong
+    int lightingModel = 0;  
 };

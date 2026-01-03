@@ -36,10 +36,9 @@
 
 // Okno aplikacji
 int windowWidth = 1500, windowHeight = 900;
-const char *windowTitle = "OpenGL w GLFW (obrot klawiszami WSAD oraz mysza)";
+const char *windowTitle = "OpenGL w GLFW";
 
 #include "utilities.hpp"
-//#include "objloader.hpp"
 #include "camera/Camera.hpp"
 #include "object/Mesh.hpp"
 #include "imgui/GUI/GUIManager.hpp"
@@ -53,6 +52,7 @@ float monkeyOrbitAngle = 0.0f;   // aktualny kąt ruchu
 float monkeyOrbitRadius = 7.0f;  // promień okręgu
 float monkeyOrbitSpeed = 0.01f;  // prędkość ruchu
 Camera camera;
+
 
 std::vector<glm::vec3> flowerVertices = {
     {-0.5f, 0.0f, 0.0f},
@@ -121,25 +121,30 @@ public:
     }
 };
 
-void DisplayScene(CProgram& program,
-                  const std::vector<Mesh*>& meshes,
-                  const std::vector<glm::vec3>& colors) {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+void DisplayScene(  CProgram& program,
+                    const std::vector<Mesh*>& meshes,
+                    const std::vector<glm::vec3>& colors,
+                    bool enablePointLight,
+                    int lightingModel  // 0 = Phong, 1 = Blinn-Phong
+                    )
+                    {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     glm::mat4 matView = camera.GetViewMatrix();
-    program.SetMatrix("matView", matView);
+    glm::vec3 cameraPos = glm::vec3(glm::inverse(matView)[3]);
 
     program.Use();
     program.SetMatrix("matProj", matProj);
     program.SetMatrix("matView", matView);
 
+    program.SetVec3("cameraPos", cameraPos);
+    program.SetFloat("enablePointLight", enablePointLight ? 1.0f : 0.0f);
+    program.SetFloat("lightingModel", (float)lightingModel);
     for (int i = 0; i < meshes.size(); i++)
     {
-        Mesh* mesh = meshes[i];
-
-        program.SetMatrix("matModel", mesh->transform.GetMatrix());
+        program.SetMatrix("matModel", meshes[i]->transform.GetMatrix());
         program.SetVec3("objectColor", colors[i]);
-
-        mesh->Draw(program.getProgramID());
+        meshes[i]->Draw(program.getProgramID());
     }
 
     program.Stop();
@@ -214,7 +219,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 // obsługa kursora
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
-    if (__mouse_press && __mouse_button == GLFW_MOUSE_BUTTON_LEFT)
+    if (__mouse_press && __mouse_button == GLFW_MOUSE_BUTTON_RIGHT)
     {
         camera.ProcessMouseDrag(
             xpos - __mouse_buttonX,
@@ -222,7 +227,6 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
             windowWidth,
             windowHeight
         );
-
         __mouse_buttonX = xpos;
         __mouse_buttonY = ypos;
     }
@@ -235,13 +239,6 @@ int main( int argc, char *argv[] )
     GLFWwindow* window = nullptr;
 	Initialize_GLFW(window);
 
-    // ImGui setup
-    // IMGUI_CHECKVERSION();
-    // ImGui::CreateContext();
-    // ImGuiIO& io = ImGui::GetIO(); (void)io;
-    // ImGui::StyleColorsDark();
-    // ImGui_ImplGlfw_InitForOpenGL(window, true);
-    // ImGui_ImplOpenGL3_Init("#version 450"); 
     GUIManager gui(window);
 
 
@@ -323,19 +320,9 @@ int main( int argc, char *argv[] )
         gui.StartFrame();
         gui.RenderFrame();
 
-		DisplayScene(program, meshes, colors);
+		DisplayScene(program, meshes, colors, gui.enablePointLight, gui.lightingModel);
         
         gui.EndFrame();
-        // // ImGui
-        // ImGui_ImplOpenGL3_NewFrame();
-        // ImGui_ImplGlfw_NewFrame();
-        // ImGui::NewFrame();
-        // ImGui::Begin("Kontrola sceny");
-        // ImGui::Text("Przykładowe parametry:");
-        // ImGui::SliderFloat("Kąt obrotu małpy", &monkeyOrbitAngle, 0.0f, 6.28f);
-        // ImGui::End();
-        // ImGui::Render();
-        // ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         
         monkeyOrbitAngle = gui.monkeyAngle;
 
@@ -353,7 +340,5 @@ int main( int argc, char *argv[] )
 	exit(EXIT_SUCCESS);
 
     // ImGui cleanup
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    gui.~GUIManager();
 }
