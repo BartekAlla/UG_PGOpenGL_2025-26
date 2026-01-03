@@ -119,27 +119,109 @@ public:
     {
         glUniform1f(glGetUniformLocation(id, name), v);
     }
+    void SetLight(const std::string& name,
+                const glm::vec3& ambient,
+                const glm::vec3& diffuse,
+                const glm::vec3& specular,
+                const glm::vec3& attenuation,
+                const glm::vec3& position)
+    {
+        SetVec3((name + ".Ambient").c_str(), ambient);
+        SetVec3((name + ".Diffuse").c_str(), diffuse);
+        SetVec3((name + ".Specular").c_str(), specular);
+        SetVec3((name + ".Attenuation").c_str(), attenuation);
+        SetVec3((name + ".Position").c_str(), position);
+    }
+
+    void SetMaterial(const std::string& name,
+                    const glm::vec3& ambient,
+                    const glm::vec3& diffuse,
+                    const glm::vec3& specular,
+                    float shininess)
+    {
+        SetVec3((name + ".Ambient").c_str(), ambient);
+        SetVec3((name + ".Diffuse").c_str(), diffuse);
+        SetVec3((name + ".Specular").c_str(), specular);
+        SetFloat((name + ".Shininess").c_str(), shininess);
+    }
+    void SetBool(const char* name, bool v)
+    {
+        glUniform1i(glGetUniformLocation(id, name), v ? 1 : 0);
+    }
 };
 
-void DisplayScene(  CProgram& program,
-                    const std::vector<Mesh*>& meshes,
-                    const std::vector<glm::vec3>& colors,
-                    GUIManager& gui
-                    )
-                    {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+// void DisplayScene(  CProgram& program,
+//                     const std::vector<Mesh*>& meshes,
+//                     const std::vector<glm::vec3>& colors,
+//                     GUIManager& gui
+//                     )
+//                     {
+//         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+//     glm::mat4 matView = camera.GetViewMatrix();
+//     glm::vec3 cameraPos = glm::vec3(glm::inverse(matView)[3]);
+
+//     program.Use();
+//     program.SetMatrix("matProj", matProj);
+//     program.SetMatrix("matView", matView);
+
+//     program.SetVec3("cameraPos", cameraPos);
+//     program.SetFloat("enablePointLight", gui.enablePointLight ? 1.0f : 0.0f);
+//     program.SetFloat("lightingModel", (float)gui.lightingModel);
+//     for (int i = 0; i < meshes.size(); i++)
+//     {
+//         program.SetMatrix("matModel", meshes[i]->transform.GetMatrix());
+//         program.SetVec3("objectColor", colors[i]);
+//         meshes[i]->Draw(program.getProgramID());
+//     }
+
+//     program.Stop();
+// }
+void DisplayScene(
+    CProgram& program,
+    const std::vector<Mesh*>& meshes,
+    const std::vector<glm::vec3>& colors,
+    GUIManager& gui
+)
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // --- MACIERZ WIDOKU I POZYCJA KAMERY ---
     glm::mat4 matView = camera.GetViewMatrix();
     glm::vec3 cameraPos = glm::vec3(glm::inverse(matView)[3]);
 
     program.Use();
+
+    // --- MACIERZE ---
     program.SetMatrix("matProj", matProj);
     program.SetMatrix("matView", matView);
-
     program.SetVec3("cameraPos", cameraPos);
-    program.SetFloat("enablePointLight", gui.enablePointLight ? 1.0f : 0.0f);
+
+    // --- PARAMETRY ŚWIATŁA (JAK W PRZYKŁADZIE 2) ---
+    program.SetLight(
+        "myLight",
+        glm::vec3(0.1f),                  // Ambient
+        glm::vec3(1.0f),                  // Diffuse
+        glm::vec3(1.0f),                  // Specular
+        glm::vec3(1.0f, 0.0f, 0.02f),      // Attenuation
+        glm::vec3(2.0f, 4.0f, 2.0f)        // Position
+    );
+
+    // --- PARAMETRY MATERIAŁU ---
+    program.SetMaterial(
+        "myMaterial",
+        glm::vec3(0.2f),   // Ambient
+        glm::vec3(1.0f),   // Diffuse
+        glm::vec3(0.5f),   // Specular
+        32.0f              // Shininess
+    );
+
+    // --- STEROWANIE Z IMGUI ---
+    program.SetBool("enablePointLight", gui.enablePointLight);
     program.SetFloat("lightingModel", (float)gui.lightingModel);
-    for (int i = 0; i < meshes.size(); i++)
+
+    // --- RYSOWANIE OBIEKTÓW ---
+    for (size_t i = 0; i < meshes.size(); i++)
     {
         program.SetMatrix("matModel", meshes[i]->transform.GetMatrix());
         program.SetVec3("objectColor", colors[i]);
@@ -148,6 +230,7 @@ void DisplayScene(  CProgram& program,
 
     program.Stop();
 }
+
 //---------------------------------------
 void Initialize()
 {
@@ -336,8 +419,11 @@ int main( int argc, char *argv[] )
 
 	glfwDestroyWindow(window);
 	glfwTerminate();
+    
+    for (Mesh* m : flowerMeshes)
+        delete m;
+
+    delete flowerModel;
 	exit(EXIT_SUCCESS);
 
-    // ImGui cleanup
-    gui.~GUIManager();
 }
