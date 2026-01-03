@@ -133,17 +133,14 @@ public:
         SetVec3((name + ".Position").c_str(), position);
     }
 
-    void SetMaterial(const std::string& name,
-                    const glm::vec3& ambient,
-                    const glm::vec3& diffuse,
-                    const glm::vec3& specular,
-                    float shininess)
+    void SetMaterial(const char* name, const Material& mat)
     {
-        SetVec3((name + ".Ambient").c_str(), ambient);
-        SetVec3((name + ".Diffuse").c_str(), diffuse);
-        SetVec3((name + ".Specular").c_str(), specular);
-        SetFloat((name + ".Shininess").c_str(), shininess);
+        SetVec3((std::string(name) + ".Ambient").c_str(), mat.ambient);
+        SetVec3((std::string(name) + ".Diffuse").c_str(), mat.diffuse);
+        SetVec3((std::string(name) + ".Specular").c_str(), mat.specular);
+        SetFloat((std::string(name) + ".Shininess").c_str(), mat.shininess);
     }
+
     void SetBool(const char* name, bool v)
     {
         glUniform1i(glGetUniformLocation(id, name), v ? 1 : 0);
@@ -207,15 +204,6 @@ void DisplayScene(
         glm::vec3(2.0f, 4.0f, 2.0f)        // Position
     );
 
-    // --- PARAMETRY MATERIAŁU ---
-    program.SetMaterial(
-        "myMaterial",
-        glm::vec3(0.2f),   // Ambient
-        glm::vec3(1.0f),   // Diffuse
-        glm::vec3(0.5f),   // Specular
-        32.0f              // Shininess
-    );
-
     // --- STEROWANIE Z IMGUI ---
     program.SetBool("enablePointLight", gui.enablePointLight);
     program.SetFloat("lightingModel", (float)gui.lightingModel);
@@ -225,6 +213,7 @@ void DisplayScene(
     {
         program.SetMatrix("matModel", meshes[i]->transform.GetMatrix());
         program.SetVec3("objectColor", colors[i]);
+        program.SetMaterial("myMaterial", meshes[i]->material);
         meshes[i]->Draw(program.getProgramID());
     }
 
@@ -332,6 +321,9 @@ int main( int argc, char *argv[] )
     monkey.transform.scale = glm::vec3(2.0f);
     glm::vec3 colorMonkey;//  = glm::vec3(1.0f, 0.5f, 0.1f);
     monkey.LoadTexture("../assets/monkey.png"); 
+    monkey.material.diffuse  = glm::vec3(1.0f, 0.6f, 0.2f);
+    monkey.material.specular = glm::vec3(1.0f);
+    monkey.material.shininess = 64.0f;
 
     Mesh palm("../models/palm.obj");
     palm.transform.position = glm::vec3(2.0f, -1.0f, 0.0f);
@@ -346,12 +338,15 @@ int main( int argc, char *argv[] )
     Mesh terrain("../models/terrain.obj");
     terrain.transform.position = glm::vec3(0.0f, -1.0f, 0.0f);
     glm::vec3 colorTerrain;// = glm::vec3(0.4f, 0.3f, 0.1f); 
-    terrain.LoadTexture("../assets/terrain.jpg");
+    terrain.LoadTexture("../assets/terrain.png");
     
     Mesh rock("../models/rock.obj");
     rock.transform.position = glm::vec3(4.5f, -1.0f, 0.5f);
     glm::vec3 colorRock;//    = glm::vec3(0.5f, 0.5f, 0.5f); 
     rock.LoadTexture("../assets/rock.png");
+    rock.material.diffuse = glm::vec3(0.5f);
+    rock.material.specular = glm::vec3(0.1f);
+    rock.material.shininess = 8.0f;
 
 
     std::vector<Mesh*> meshes = {
@@ -419,7 +414,7 @@ int main( int argc, char *argv[] )
 
 	glfwDestroyWindow(window);
 	glfwTerminate();
-    
+
     for (Mesh* m : flowerMeshes)
         delete m;
 

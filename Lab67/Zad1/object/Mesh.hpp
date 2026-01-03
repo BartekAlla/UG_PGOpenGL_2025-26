@@ -3,12 +3,13 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include "Transform.hpp"
+#include "Material.hpp"
 
 class Mesh
 {
 public:
     Transform transform;
-
+    Material material;
     // Konstrukcja
     Mesh(const char* objPath);
     Mesh(const std::vector<glm::vec3>& vertices,
