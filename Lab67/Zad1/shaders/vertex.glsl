@@ -4,9 +4,6 @@ layout(location = 0) in vec3 inPos;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inUV;
 
-// -----------------------
-// STRUKTURY
-// -----------------------
 struct LightParam
 {
     vec3 Ambient;
@@ -34,14 +31,12 @@ uniform mat4 matView;
 uniform mat4 matModel;
 uniform vec3 cameraPos;
 uniform bool enablePointLight;
-uniform float lightingModel; // 0.0 = Phong, 11.0 = Blinn-Phong
-
+uniform float lightingModel; 
+uniform float lightIntensity;
 
 uniform LightParam myLight;
 uniform MaterialParam myMaterial;
-// -----------------------
-// PHONG – ŚWIATŁO PUNKTOWE
-// -----------------------
+
 vec3 calculatePointLight(
     vec3 Position,
     vec3 Normal,
@@ -51,37 +46,33 @@ vec3 calculatePointLight(
     int model
 )
 {
+    //Ambient
     vec3 ambient = light.Ambient * material.Ambient;
-
-    vec3 L = normalize(light.Position - Position);
-    float diff = max(dot(Normal, L), 0.0);
+    //Diffuse
+    vec3 L = normalize(light.Position - Position.xyz);
+    float diff = max(dot(L, Normal), 0);
     vec3 diffuse = diff * light.Diffuse * material.Diffuse;
-
-    vec3 V = normalize(cameraPos - Position);
+    //Specular
+    vec3 E = normalize(cameraPos - Position.xyz);
     vec3 specular = vec3(0.0);
 
     if(model == 0) // Phong
     {
-        vec3 R = reflect(-L, Normal);
-        float spec = pow(max(dot(R, V), 0.0), material.Shininess);
+        vec3 R = reflect(-E, Normal);
+        float spec = pow(max(dot(R, L), 0), material.Shininess);
         specular = spec * light.Specular * material.Specular;
     }
     else // Blinn-Phong
     {
-        vec3 H = normalize(L + V);
+        vec3 H = normalize(L + E);
         float spec = pow(max(dot(Normal, H), 0.0), material.Shininess);
         specular = spec * light.Specular * material.Specular;
     }
-
-    float dist = length(light.Position - Position);
-    float att = 1.0 /
-    (
-        light.Attenuation.x +
-        light.Attenuation.y * dist +
-        light.Attenuation.z * dist * dist
-    );
-
-    return ambient + att * (diffuse + specular);
+    //Attenuation
+    float LV = distance(Position.xyz, light.Position);
+    float latt = 1.0 / (light.Attenuation.x + light.Attenuation.y * LV + light.Attenuation.z * LV * LV);
+    vec3 result = ambient + latt * (diffuse + specular);
+    return result * lightIntensity;
 }
 
 
@@ -89,47 +80,6 @@ vec3 calculatePointLight(
 
 void main()
 {
-    // // Pozycja i normalna w przestrzeni świata
-    // fragPos = vec3(matModel * vec4(inPos, 1.0));
-    // fragNormal = normalize(mat3(transpose(inverse(matModel))) * inNormal);
-    // fragUV = inUV;
-
-    // // PARAMETRY ŚWIATŁA
-    // LightParam light = LightParam(
-    //     vec3(0.1),
-    //     vec3(1.0),
-    //     vec3(1.0),
-    //     vec3(1.0, 0.0, 0.02),
-    //     vec3(2.0, 4.0, 2.0)
-    // );
-
-    // // PARAMETRY MATERIAŁU
-    // MaterialParam material = MaterialParam(
-    //     vec3(0.2),
-    //     vec3(1.0),
-    //     vec3(0.5),
-    //     32.0
-    // );
-
-    // // LICZENIE PHONGA/BLINN
-    // if(enablePointLight)
-    // {
-    //     fragLightCoef = calculatePointLight(
-    //         fragPos,
-    //         fragNormal,
-    //         cameraPos,
-    //         light,
-    //         material,
-    //         lightingModel 
-    //     );
-    // }
-    // else
-    // {
-    //     fragLightCoef = vec3(1.0);
-    // }
-
-
-    // gl_Position = matProj * matView * matModel * vec4(inPos, 1.0);
     fragPos = vec3(matModel * vec4(inPos, 1.0));
     fragNormal = normalize(mat3(transpose(inverse(matModel))) * inNormal);
     fragUV = inUV;

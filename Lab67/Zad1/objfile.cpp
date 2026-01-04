@@ -52,7 +52,25 @@ float monkeyOrbitAngle = 0.0f;   // aktualny kąt ruchu
 float monkeyOrbitRadius = 7.0f;  // promień okręgu
 float monkeyOrbitSpeed = 0.01f;  // prędkość ruchu
 Camera camera;
+glm::vec3 lightBasePos = glm::vec3(2.0f, 8.0f, 2.0f);
+//float lightAngle = 0.0f;
 
+struct Light
+{
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
+    glm::vec3 attenuation; 
+    glm::vec3 position;
+};
+
+Light pointLight = {
+    glm::vec3(0.1f),                 // ambient
+    glm::vec3(1.0f),                 // diffuse
+    glm::vec3(1.0f),                 // specular
+    glm::vec3(1.0f, 0.09f, 0.032f),  // attenuation
+    glm::vec3(2.0f, 4.0f, 2.0f)      // position
+};
 
 std::vector<glm::vec3> flowerVertices = {
     {-0.5f, 0.0f, 0.0f},
@@ -147,38 +165,12 @@ public:
     }
 };
 
-// void DisplayScene(  CProgram& program,
-//                     const std::vector<Mesh*>& meshes,
-//                     const std::vector<glm::vec3>& colors,
-//                     GUIManager& gui
-//                     )
-//                     {
-//         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-//     glm::mat4 matView = camera.GetViewMatrix();
-//     glm::vec3 cameraPos = glm::vec3(glm::inverse(matView)[3]);
-
-//     program.Use();
-//     program.SetMatrix("matProj", matProj);
-//     program.SetMatrix("matView", matView);
-
-//     program.SetVec3("cameraPos", cameraPos);
-//     program.SetFloat("enablePointLight", gui.enablePointLight ? 1.0f : 0.0f);
-//     program.SetFloat("lightingModel", (float)gui.lightingModel);
-//     for (int i = 0; i < meshes.size(); i++)
-//     {
-//         program.SetMatrix("matModel", meshes[i]->transform.GetMatrix());
-//         program.SetVec3("objectColor", colors[i]);
-//         meshes[i]->Draw(program.getProgramID());
-//     }
-
-//     program.Stop();
-// }
 void DisplayScene(
     CProgram& program,
     const std::vector<Mesh*>& meshes,
     const std::vector<glm::vec3>& colors,
-    GUIManager& gui
+    GUIManager& gui,
+    const Light& light
 )
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -193,21 +185,17 @@ void DisplayScene(
     program.SetMatrix("matProj", matProj);
     program.SetMatrix("matView", matView);
     program.SetVec3("cameraPos", cameraPos);
-
-    // --- PARAMETRY ŚWIATŁA (JAK W PRZYKŁADZIE 2) ---
-    program.SetLight(
-        "myLight",
-        glm::vec3(0.1f),                  // Ambient
-        glm::vec3(1.0f),                  // Diffuse
-        glm::vec3(1.0f),                  // Specular
-        glm::vec3(1.0f, 0.0f, 0.02f),      // Attenuation
-        glm::vec3(2.0f, 4.0f, 2.0f)        // Position
-    );
-
+    // --- USTAWIENIE SWIATLA PUNKTOWEGO ---
+    program.SetVec3("myLight.Ambient",     light.ambient);
+    program.SetVec3("myLight.Diffuse",     light.diffuse);
+    program.SetVec3("myLight.Specular",    light.specular);
+    program.SetVec3("myLight.Attenuation", light.attenuation);
+    program.SetVec3("myLight.Position",    light.position);
     // --- STEROWANIE Z IMGUI ---
     program.SetBool("enablePointLight", gui.enablePointLight);
     program.SetFloat("lightingModel", (float)gui.lightingModel);
-
+    program.SetFloat("lightIntensity", gui.lightIntensity);
+    program.SetVec3("myLight.Position", light.position);
     // --- RYSOWANIE OBIEKTÓW ---
     for (size_t i = 0; i < meshes.size(); i++)
     {
@@ -321,67 +309,76 @@ int main( int argc, char *argv[] )
     monkey.transform.scale = glm::vec3(2.0f);
     glm::vec3 colorMonkey;//  = glm::vec3(1.0f, 0.5f, 0.1f);
     monkey.LoadTexture("../assets/monkey.png"); 
-    monkey.material.diffuse  = glm::vec3(1.0f, 0.6f, 0.2f);
-    monkey.material.specular = glm::vec3(1.0f);
-    monkey.material.shininess = 64.0f;
+    monkey.material.diffuse  = glm::vec3(1.0f);   
+    monkey.material.specular = glm::vec3(1.0f);  
+    monkey.material.shininess = 128.0f; 
 
-    Mesh palm("../models/palm.obj");
-    palm.transform.position = glm::vec3(2.0f, -1.0f, 0.0f);
-    glm::vec3 colorPalm;//    = glm::vec3(0.2f, 0.7f, 0.2f); 
-    palm.LoadTexture("../assets/palm.png");
+    Mesh tower("../models/tower.obj");
+    tower.transform.position = glm::vec3(2.0f, -3.0f, -5.0f);
+    glm::vec3 colorTower;//    = glm::vec3(0.2f, 0.7f, 0.2f); 
+    tower.LoadTexture("../assets/metal.png");
+    tower.material.diffuse  = glm::vec3(1.0f);  
+    tower.material.specular = glm::vec3(1.0f);   
+    tower.material.shininess = 96.0f;            
     
     Mesh cactus("../models/kaktus.obj");
     cactus.transform.position = glm::vec3(-2.0f, -1.0f, 0.0f);
     glm::vec3 colorCactus;//  = glm::vec3(0.1f, 0.8f, 0.3f); 
-    cactus.LoadTexture("../assets/kaktus.jpg");
+    cactus.LoadTexture("../assets/cactus.png");
+    cactus.material.diffuse  = glm::vec3(1.0f);
+    cactus.material.specular = glm::vec3(0.02f); 
+    cactus.material.shininess = 3.0f;            
 	
     Mesh terrain("../models/terrain.obj");
     terrain.transform.position = glm::vec3(0.0f, -1.0f, 0.0f);
     glm::vec3 colorTerrain;// = glm::vec3(0.4f, 0.3f, 0.1f); 
     terrain.LoadTexture("../assets/terrain.png");
+    terrain.material.diffuse  = glm::vec3(1.0f);
+    terrain.material.specular = glm::vec3(0.0f); 
+    terrain.material.shininess = 1.0f;
     
     Mesh rock("../models/rock.obj");
     rock.transform.position = glm::vec3(4.5f, -1.0f, 0.5f);
     glm::vec3 colorRock;//    = glm::vec3(0.5f, 0.5f, 0.5f); 
     rock.LoadTexture("../assets/rock.png");
-    rock.material.diffuse = glm::vec3(0.5f);
-    rock.material.specular = glm::vec3(0.1f);
-    rock.material.shininess = 8.0f;
+    rock.material.diffuse  = glm::vec3(0.7f);
+    rock.material.specular = glm::vec3(0.05f);  
+    rock.material.shininess = 4.0f;             
 
 
     std::vector<Mesh*> meshes = {
         &monkey,
-        &palm,
+        &tower,
         &cactus,
         &terrain,
         &rock
     };
     std::vector<glm::vec3> colors = {
         colorMonkey,
-        colorPalm,
+        colorTower,
         colorCactus,
         colorTerrain,
         colorRock
     };
 
 
-    Mesh* flowerModel = new Mesh(flowerVertices, flowerUV);
-    flowerModel->LoadTexture("../assets/flower32bit.png");
+    // Mesh* flowerModel = new Mesh(flowerVertices, flowerUV);
+    // flowerModel->LoadTexture("../assets/flower32bit.png");
 
-    std::vector<Mesh*> flowerMeshes;
+    // std::vector<Mesh*> flowerMeshes;
 
-    for (int i = 0; i < 20; i++)
-    {
-        Mesh* f = new Mesh(*flowerModel); 
-        f->transform.position = glm::vec3((rand() % 50 - 10) / 2.0f, -1.0f, (rand() % 50 - 10) / 2.0f);
-        float angle = (rand() % 360) * 1.0f; 
-        f->transform.rotation = glm::vec3(0.0f, glm::radians(angle), 0.0f);
-        float s = 1.5f + (rand() / (float)RAND_MAX) * 2.0f;
-        f->transform.scale = glm::vec3(s);
-        flowerMeshes.push_back(f);
-    }
+    // for (int i = 0; i < 20; i++)
+    // {
+    //     Mesh* f = new Mesh(*flowerModel); 
+    //     f->transform.position = glm::vec3((rand() % 50 - 10) / 2.0f, -1.0f, (rand() % 50 - 10) / 2.0f);
+    //     float angle = (rand() % 360) * 1.0f; 
+    //     f->transform.rotation = glm::vec3(0.0f, glm::radians(angle), 0.0f);
+    //     float s = 1.5f + (rand() / (float)RAND_MAX) * 2.0f;
+    //     f->transform.scale = glm::vec3(s);
+    //     flowerMeshes.push_back(f);
+    // }
 
-    meshes.insert(meshes.end(), flowerMeshes.begin(), flowerMeshes.end());
+    // meshes.insert(meshes.end(), flowerMeshes.begin(), flowerMeshes.end());
 
 
 	Initialize();
@@ -397,17 +394,28 @@ int main( int argc, char *argv[] )
         gui.StartFrame();
         gui.RenderFrame();
 
-		DisplayScene(program, meshes, colors,gui);
+		DisplayScene(program, meshes, colors,gui, pointLight);
         
         gui.EndFrame();
         
-        monkeyOrbitAngle = gui.monkeyAngle;
 
         monkey.transform.rotation.y += 0.03f;
-        //monkeyOrbitAngle += monkeyOrbitSpeed;
+        monkeyOrbitAngle += monkeyOrbitSpeed;
         monkey.transform.position.x = monkeyCenter.x + cos(monkeyOrbitAngle) * monkeyOrbitRadius;
         monkey.transform.position.z = monkeyCenter.z + sin(monkeyOrbitAngle) * monkeyOrbitRadius;
         cactus.transform.rotation.y -= 0.02f;
+
+        float currentTime = glfwGetTime();
+
+        if (gui.animateLight)
+        {
+            float radius = 6.0f;
+
+            pointLight.position.x = cos(currentTime * gui.lightAnimSpeed) * radius;
+            pointLight.position.z = sin(currentTime * gui.lightAnimSpeed) * radius;
+        }
+
+
 		glfwSwapBuffers(window);
 	}
 
@@ -415,10 +423,10 @@ int main( int argc, char *argv[] )
 	glfwDestroyWindow(window);
 	glfwTerminate();
 
-    for (Mesh* m : flowerMeshes)
-        delete m;
+    // for (Mesh* m : flowerMeshes)
+    //     delete m;
 
-    delete flowerModel;
+    // delete flowerModel;
 	exit(EXIT_SUCCESS);
 
 }

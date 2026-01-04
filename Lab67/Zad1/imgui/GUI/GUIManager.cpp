@@ -30,10 +30,20 @@ void GUIManager::RenderFrame()
 {
     ImGui::Begin("Scene Control");
     ImGui::Text("Animation parameters:");
-    ImGui::SliderFloat("Monkey rotation", &monkeyAngle, 0.0f, 6.28f);
     ImGui::Checkbox("Enable Point Light", &enablePointLight);
     ImGui::RadioButton("Phong", &lightingModel, 0);
     ImGui::RadioButton("Blinn-Phong", &lightingModel, 1);
+    ImGui::SliderFloat(
+    "Light intensity",
+        &lightIntensity,
+        0.0f,
+        3.0f
+    );
+    ImGui::Separator();
+    ImGui::Text("Light animation");
+
+    ImGui::Checkbox("Animate light", &animateLight);
+    ImGui::SliderFloat("Animation speed", &lightAnimSpeed, 0.1f, 5.0f);
     ImGui::End();
 }
 
