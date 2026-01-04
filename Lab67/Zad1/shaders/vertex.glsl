@@ -36,6 +36,7 @@ uniform float lightIntensity;
 
 uniform LightParam myLight;
 uniform MaterialParam myMaterial;
+uniform bool isLightSphere;
 
 vec3 calculatePointLight(
     vec3 Position,
@@ -84,20 +85,27 @@ void main()
     fragNormal = normalize(mat3(transpose(inverse(matModel))) * inNormal);
     fragUV = inUV;
 
-    if(enablePointLight)
+    if (isLightSphere)
     {
-        fragLightCoef = calculatePointLight(
-            fragPos,
-            fragNormal,
-            cameraPos,
-            myLight,
-            myMaterial,
-            int(lightingModel)
-        );
+        fragLightCoef = myLight.Diffuse;
     }
     else
     {
-        fragLightCoef = vec3(1.0);
+        if(enablePointLight)
+        {
+            fragLightCoef = calculatePointLight(
+                fragPos,
+                fragNormal,
+                cameraPos,
+                myLight,
+                myMaterial,
+                int(lightingModel)
+            );
+        }
+        else
+        {
+            fragLightCoef = vec3(1.0);
+        }
     }
 
     gl_Position = matProj * matView * matModel * vec4(inPos, 1.0);

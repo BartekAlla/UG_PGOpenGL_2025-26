@@ -170,7 +170,8 @@ void DisplayScene(
     const std::vector<Mesh*>& meshes,
     const std::vector<glm::vec3>& colors,
     GUIManager& gui,
-    const Light& light
+    const Light& light,
+    Mesh* lightSphere
 )
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -191,12 +192,14 @@ void DisplayScene(
     program.SetVec3("myLight.Specular",    light.specular);
     program.SetVec3("myLight.Attenuation", light.attenuation);
     program.SetVec3("myLight.Position",    light.position);
+    
     // --- STEROWANIE Z IMGUI ---
     program.SetBool("enablePointLight", gui.enablePointLight);
     program.SetFloat("lightingModel", (float)gui.lightingModel);
     program.SetFloat("lightIntensity", gui.lightIntensity);
     program.SetVec3("myLight.Position", light.position);
     // --- RYSOWANIE OBIEKTÓW ---
+    program.SetBool("isLightSphere", false);
     for (size_t i = 0; i < meshes.size(); i++)
     {
         program.SetMatrix("matModel", meshes[i]->transform.GetMatrix());
@@ -204,7 +207,15 @@ void DisplayScene(
         program.SetMaterial("myMaterial", meshes[i]->material);
         meshes[i]->Draw(program.getProgramID());
     }
+     // --- rysowanie sfery światła ---
+    program.SetBool("isLightSphere", true);
+    glm::mat4 lightMat = glm::mat4(1.0f);
+    lightMat = glm::translate(lightMat, lightSphere->transform.position);
+    lightMat = glm::scale(lightMat, lightSphere->transform.scale);
+    program.SetMatrix("matModel", lightMat);
+    lightSphere->Draw(program.getProgramID());
 
+    program.SetBool("isLightSphere", false);
     program.Stop();
 }
 
@@ -343,7 +354,13 @@ int main( int argc, char *argv[] )
     rock.LoadTexture("../assets/rock.png");
     rock.material.diffuse  = glm::vec3(0.7f);
     rock.material.specular = glm::vec3(0.05f);  
-    rock.material.shininess = 4.0f;             
+    rock.material.shininess = 4.0f;            
+
+
+    Mesh* lightSphere = new Mesh("../models/sphere.obj");
+    lightSphere->transform.position = pointLight.position;
+    lightSphere->transform.scale = glm::vec3(1.0f);   
+    glm::vec3 colorLightSphere = glm::vec3(1.0f, 1.0f, 0.0f);
 
 
     std::vector<Mesh*> meshes = {
@@ -394,7 +411,7 @@ int main( int argc, char *argv[] )
         gui.StartFrame();
         gui.RenderFrame();
 
-		DisplayScene(program, meshes, colors,gui, pointLight);
+		DisplayScene(program, meshes, colors,gui, pointLight, lightSphere);
         
         gui.EndFrame();
         
@@ -413,6 +430,7 @@ int main( int argc, char *argv[] )
 
             pointLight.position.x = cos(currentTime * gui.lightAnimSpeed) * radius;
             pointLight.position.z = sin(currentTime * gui.lightAnimSpeed) * radius;
+            lightSphere->transform.position = pointLight.position;
         }
 
 
