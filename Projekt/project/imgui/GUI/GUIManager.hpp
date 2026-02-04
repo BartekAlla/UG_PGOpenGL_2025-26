@@ -4,6 +4,7 @@
 #include "../imgui_impl_opengl3.h"
 #include <GLFW/glfw3.h>
 
+
 class GUIManager
 {
 private:
@@ -22,4 +23,6 @@ public:
     float lightIntensity = 1.0f;
     bool animateLight = false;
     float lightAnimSpeed = 1.0f;
+    int skyboxIndex = 0;
+
 };

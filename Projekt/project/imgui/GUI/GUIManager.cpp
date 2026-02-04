@@ -44,6 +44,11 @@ void GUIManager::RenderFrame()
 
     ImGui::Checkbox("Animate light", &animateLight);
     ImGui::SliderFloat("Animation speed", &lightAnimSpeed, 0.1f, 5.0f);
+    ImGui::Separator();
+    ImGui::Text("Skybox");
+    const char* skyNames[] = { "ForestCamp", "River" };
+    ImGui::Combo("Active skybox", &this->skyboxIndex, skyNames, IM_ARRAYSIZE(skyNames));
+
     ImGui::End();
 }
 

@@ -42,14 +42,14 @@ const char *windowTitle = "OpenGL w GLFW";
 #include "camera/Camera.hpp"
 #include "object/Mesh.hpp"
 #include "imgui/GUI/GUIManager.hpp"
-
+#include "skybox/CSkyBox.hpp"
 
 
 glm::mat4 matProj;
 glm::mat4 matModel;
 
 float monkeyOrbitAngle = 0.0f;   // aktualny kąt ruchu
-float monkeyOrbitRadius = 7.0f;  // promień okręgu
+float monkeyOrbitRadius = 10.0f;  // promień okręgu
 float monkeyOrbitSpeed = 0.01f;  // prędkość ruchu
 Camera camera;
 glm::vec3 lightBasePos = glm::vec3(2.0f, 8.0f, 2.0f);
@@ -69,7 +69,7 @@ Light pointLight = {
     glm::vec3(1.0f),                 // diffuse
     glm::vec3(1.0f),                 // specular
     glm::vec3(1.0f, 0.09f, 0.032f),  // attenuation
-    glm::vec3(2.0f, 4.0f, 2.0f)      // position
+    glm::vec3(2.0f, 5.0f, 2.0f)      // position
 };
 
 std::vector<glm::vec3> flowerVertices = {
@@ -171,13 +171,15 @@ void DisplayScene(
     const std::vector<glm::vec3>& colors,
     GUIManager& gui,
     const Light& light,
-    Mesh* lightSphere
-)
+    Mesh* lightSphere,
+    const CSkyBox& activeSkybox  
+)   
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // --- MACIERZ WIDOKU I POZYCJA KAMERY ---
     glm::mat4 matView = camera.GetViewMatrix();
+    activeSkybox.Render(matProj, matView);
     glm::vec3 cameraPos = glm::vec3(glm::inverse(matView)[3]);
 
     program.Use();
@@ -231,7 +233,7 @@ void Initialize()
 	// Obliczanie macierzy rzutowania perspektywicznego
 	// za pierwszym razem (po utworzeniu okna aplikacji)
 	if (windowHeight != 0) {
-		matProj = glm::perspective(glm::radians(80.0f), windowWidth/(float)windowHeight, 0.1f, 50.0f);
+		matProj = glm::perspective(glm::radians(80.0f), windowWidth/(float)windowHeight, 0.1f, 500.0f);
 	}
 		
 
@@ -254,7 +256,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	// NOWE! Obliczanie macierzy rzutowania perspektywicznego
 	// Dlaczego akurat tutaj?
 	// -------------------------------------------------------
-	matProj = glm::perspective(glm::radians(70.0f), width/(float)height, 0.1f, 20.0f );
+	matProj = glm::perspective(glm::radians(70.0f), width/(float)height, 0.1f, 500.0f );
 
 }
 
@@ -325,7 +327,8 @@ int main( int argc, char *argv[] )
     monkey.material.shininess = 128.0f; 
 
     Mesh tower("../models/tower.obj");
-    tower.transform.position = glm::vec3(2.0f, -3.0f, -5.0f);
+    tower.transform.position = glm::vec3(2.0f, -5.0f, -5.0f);
+    tower.transform.scale = glm::vec3(5.0f);
     glm::vec3 colorTower;//    = glm::vec3(0.2f, 0.7f, 0.2f); 
     tower.LoadTexture("../assets/metal.png");
     tower.material.diffuse  = glm::vec3(1.0f);  
@@ -400,6 +403,16 @@ int main( int argc, char *argv[] )
 
 	Initialize();
 
+    CSkyBox skyA;
+    CSkyBox skyB;
+
+    // ścieżki do shaderów:
+    const std::string skyVS = "shaders/skybox-vertex.glsl";
+    const std::string skyFS = "shaders/skybox-fragment.glsl";
+
+    // jeśli masz katalogi z teksturami:
+    skyA.InitFromDirectory("skybox/forest", skyVS, skyFS);
+    skyB.InitFromDirectory("skybox/nearLake",  skyVS, skyFS);
 
 	// Glowna petla
 	while (!glfwWindowShouldClose(window))
@@ -410,8 +423,8 @@ int main( int argc, char *argv[] )
 
         gui.StartFrame();
         gui.RenderFrame();
-
-		DisplayScene(program, meshes, colors,gui, pointLight, lightSphere);
+        const CSkyBox& activeSky = (gui.skyboxIndex == 0) ? skyA : skyB;
+		DisplayScene(program, meshes, colors,gui, pointLight, lightSphere, activeSky);
         
         gui.EndFrame();
         
