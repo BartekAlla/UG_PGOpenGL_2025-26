@@ -41,6 +41,7 @@ const char *windowTitle = "OpenGL w GLFW";
 #include "utilities.hpp"
 #include "camera/Camera.hpp"
 #include "object/Mesh.hpp"
+#include "object/InstancedMesh.hpp"
 #include "imgui/GUI/GUIManager.hpp"
 #include "skybox/CSkyBox.hpp"
 
@@ -313,6 +314,7 @@ int main( int argc, char *argv[] )
 
     GUIManager gui(window);
 
+    CProgram mosquitoProg("shaders/mosquito_inst_vert.glsl", "shaders/mosquito_inst_frag.glsl");
 
  	CProgram program("shaders/vertex.glsl", "shaders/fragment.glsl");
 
@@ -403,6 +405,25 @@ int main( int argc, char *argv[] )
 
 	Initialize();
 
+    CMultipleMesh mosquitoes;
+    const size_t MOSQ_MAX = 100000;
+
+    mosquitoes.InitQuadInstanced(MOSQ_MAX);
+    mosquitoes.LoadTexture("../assets/mosquito.png");
+
+    // ustaw początkową liczbę (np. z GUI)
+    mosquitoes.SetActiveCount(
+        (size_t)gui.mosquitoCount,
+        terrain.transform.position,
+        20.0f,                       // areaHalfSize
+        1.0f,                        // yMin
+        8.0f                         // yMax
+    );
+
+
+
+    
+
     CSkyBox skyA;
     CSkyBox skyB;
 
@@ -423,9 +444,50 @@ int main( int argc, char *argv[] )
 
         gui.StartFrame();
         gui.RenderFrame();
+
+        static float lastTime = (float)glfwGetTime();
+        float now = (float)glfwGetTime();
+        float dt = now - lastTime;
+        lastTime = now;
+        static int lastCount = -1;
+        if (gui.mosquitoCount != lastCount)
+        {
+            mosquitoes.SetActiveCount(
+                (size_t)gui.mosquitoCount,
+                terrain.transform.position,
+                20.0f,
+                1.0f,
+                8.0f
+            );
+            lastCount = gui.mosquitoCount;
+        }
+
+        mosquitoes.Update(dt, 20.0f, 1.0f, 8.0f);
+        glm::vec3 monkeyPos = monkey.transform.position;
+
+        // promień “dotyku” (dopasuj)
+        float killRadius = 1.5f;
+        // usuń komary, które “dotknęła” małpa (po XZ)
+        int removed = mosquitoes.RemoveColliding(monkeyPos, killRadius, true);
+
+        if (removed > 0)
+        {
+            gui.mosquitoCount = (int)mosquitoes.ActiveCount();
+        }
+        //glm::vec3 monkeyPos = monkey.transform.position;
+
+        // promienie w jednostkach świata — dopasuj do sceny:
+        float monkeyRadius = 1.5f;
+        float mosquitoRadius = 0.2f;
+
+        // jeśli chcesz tylko XZ (bez wysokości), w RemoveInSphere ustaw d.y = 0
+        int killed = mosquitoes.RemoveInSphere(monkeyPos, monkeyRadius + mosquitoRadius);
+        if (killed > 0)
+            std::cout << "Killed mosquitoes: " << killed << "\n";
         const CSkyBox& activeSky = (gui.skyboxIndex == 0) ? skyA : skyB;
 		DisplayScene(program, meshes, colors,gui, pointLight, lightSphere, activeSky);
-        
+        glm::mat4 matView = camera.GetViewMatrix();
+        mosquitoes.DrawInstanced(mosquitoProg.getProgramID(), matProj, matView);
         gui.EndFrame();
         
 

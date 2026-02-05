@@ -24,5 +24,5 @@ public:
     bool animateLight = false;
     float lightAnimSpeed = 1.0f;
     int skyboxIndex = 0;
-
+    int mosquitoCount = 2000;
 };

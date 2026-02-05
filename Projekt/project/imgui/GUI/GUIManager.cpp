@@ -48,7 +48,7 @@ void GUIManager::RenderFrame()
     ImGui::Text("Skybox");
     const char* skyNames[] = { "ForestCamp", "River" };
     ImGui::Combo("Active skybox", &this->skyboxIndex, skyNames, IM_ARRAYSIZE(skyNames));
-
+    ImGui::SliderInt("Mosquito count", &mosquitoCount, 0, 100000);
     ImGui::End();
 }
 

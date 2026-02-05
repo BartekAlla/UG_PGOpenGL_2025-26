@@ -37,7 +37,7 @@ public:
         return InitFromFaces(faces, vsPath, fsPath);
     }
 
-    // faces w kolejności: +X, -X, +Y, -Y, +Z, -Z
+
     bool InitFromFaces(const std::array<std::string, 6>& faces,
                        const std::string& vsPath,
                        const std::string& fsPath)
