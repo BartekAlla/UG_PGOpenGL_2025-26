@@ -3,8 +3,8 @@ layout(location=0) in vec3 inPos;
 layout(location=2) in vec2 inUV;
 
 // per-instance:
-layout(location=3) in vec4 iPosScale;  // xyz + scale
-layout(location=4) in vec4 iRotPhase;  // rotY + phase + unused + unused
+layout(location=3) in vec4 iPosScale;  
+layout(location=4) in vec4 iRotPhase;  
 
 out vec2 fragUV;
 

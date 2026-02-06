@@ -49,6 +49,16 @@ void GUIManager::RenderFrame()
     const char* skyNames[] = { "ForestCamp", "River" };
     ImGui::Combo("Active skybox", &this->skyboxIndex, skyNames, IM_ARRAYSIZE(skyNames));
     ImGui::SliderInt("Mosquito count", &mosquitoCount, 0, 100000);
+    ImGui::Separator();
+    ImGui::Text("Fog");
+    ImGui::Checkbox("Enable fog", &enableFog);
+    ImGui::RadioButton("Linear", &fogMode, 0);
+    ImGui::RadioButton("Exp", &fogMode, 1);
+    ImGui::RadioButton("Exp2", &fogMode, 2);
+    ImGui::ColorEdit3("Fog color", &fogColor.x);
+    ImGui::SliderFloat("Fog density", &fogDensity, 0.0f, 0.2f);
+    ImGui::SliderFloat("Fog start", &fogStart, 0.0f, 100.0f);
+    ImGui::SliderFloat("Fog end", &fogEnd, 0.0f, 300.0f);
     ImGui::End();
 }
 

@@ -47,14 +47,11 @@ const char *windowTitle = "OpenGL w GLFW";
 
 
 glm::mat4 matProj;
-glm::mat4 matModel;
 
 float monkeyOrbitAngle = 0.0f;   // aktualny kąt ruchu
 float monkeyOrbitRadius = 10.0f;  // promień okręgu
 float monkeyOrbitSpeed = 0.01f;  // prędkość ruchu
 Camera camera;
-glm::vec3 lightBasePos = glm::vec3(2.0f, 8.0f, 2.0f);
-//float lightAngle = 0.0f;
 
 struct Light
 {
@@ -189,6 +186,14 @@ void DisplayScene(
     program.SetMatrix("matProj", matProj);
     program.SetMatrix("matView", matView);
     program.SetVec3("cameraPos", cameraPos);
+
+    program.SetBool("enableFog", gui.enableFog);
+    program.SetVec3("fogColor", gui.fogColor);
+    program.SetFloat("fogDensity", gui.fogDensity);
+    program.SetFloat("fogStart", gui.fogStart);
+    program.SetFloat("fogEnd", gui.fogEnd);
+    glUniform1i(glGetUniformLocation(program.getProgramID(), "fogMode"), gui.fogMode);
+
     // --- USTAWIENIE SWIATLA PUNKTOWEGO ---
     program.SetVec3("myLight.Ambient",     light.ambient);
     program.SetVec3("myLight.Diffuse",     light.diffuse);
@@ -219,6 +224,8 @@ void DisplayScene(
     lightSphere->Draw(program.getProgramID());
 
     program.SetBool("isLightSphere", false);
+
+    
     program.Stop();
 }
 
@@ -411,13 +418,12 @@ int main( int argc, char *argv[] )
     mosquitoes.InitQuadInstanced(MOSQ_MAX);
     mosquitoes.LoadTexture("../assets/mosquito.png");
 
-    // ustaw początkową liczbę (np. z GUI)
     mosquitoes.SetActiveCount(
         (size_t)gui.mosquitoCount,
         terrain.transform.position,
-        20.0f,                       // areaHalfSize
-        1.0f,                        // yMin
-        8.0f                         // yMax
+        20.0f,                       
+        1.0f,                     
+        8.0f                    
     );
 
 
@@ -427,11 +433,9 @@ int main( int argc, char *argv[] )
     CSkyBox skyA;
     CSkyBox skyB;
 
-    // ścieżki do shaderów:
     const std::string skyVS = "shaders/skybox-vertex.glsl";
     const std::string skyFS = "shaders/skybox-fragment.glsl";
 
-    // jeśli masz katalogi z teksturami:
     skyA.InitFromDirectory("skybox/forest", skyVS, skyFS);
     skyB.InitFromDirectory("skybox/nearLake",  skyVS, skyFS);
 
@@ -439,8 +443,6 @@ int main( int argc, char *argv[] )
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
-        glUseProgram(program.getProgramID());
-        glUseProgram(0);
 
         gui.StartFrame();
         gui.RenderFrame();
@@ -465,25 +467,14 @@ int main( int argc, char *argv[] )
         mosquitoes.Update(dt, 20.0f, 1.0f, 8.0f);
         glm::vec3 monkeyPos = monkey.transform.position;
 
-        // promień “dotyku” (dopasuj)
         float killRadius = 1.5f;
-        // usuń komary, które “dotknęła” małpa (po XZ)
         int removed = mosquitoes.RemoveColliding(monkeyPos, killRadius, true);
 
         if (removed > 0)
         {
             gui.mosquitoCount = (int)mosquitoes.ActiveCount();
+            lastCount = gui.mosquitoCount;
         }
-        //glm::vec3 monkeyPos = monkey.transform.position;
-
-        // promienie w jednostkach świata — dopasuj do sceny:
-        float monkeyRadius = 1.5f;
-        float mosquitoRadius = 0.2f;
-
-        // jeśli chcesz tylko XZ (bez wysokości), w RemoveInSphere ustaw d.y = 0
-        int killed = mosquitoes.RemoveInSphere(monkeyPos, monkeyRadius + mosquitoRadius);
-        if (killed > 0)
-            std::cout << "Killed mosquitoes: " << killed << "\n";
         const CSkyBox& activeSky = (gui.skyboxIndex == 0) ? skyA : skyB;
 		DisplayScene(program, meshes, colors,gui, pointLight, lightSphere, activeSky);
         glm::mat4 matView = camera.GetViewMatrix();

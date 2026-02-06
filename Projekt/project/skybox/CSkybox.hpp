@@ -20,8 +20,6 @@ public:
     CSkyBox(const CSkyBox&) = delete;
     CSkyBox& operator=(const CSkyBox&) = delete;
 
-    // dir: np. "skybox/desert"
-    // pliki: posx.jpg negx.jpg posy.jpg negy.jpg posz.jpg negz.jpg
     bool InitFromDirectory(const std::string& dir,
                            const std::string& vsPath,
                            const std::string& fsPath)
@@ -60,17 +58,14 @@ public:
         if (!m_program || !m_vao || !m_cubemap)
             return;
         
-        // usuń translację z matView
         glm::mat4 viewNoTrans = glm::mat4(glm::mat3(matView));
 
-        // zachowaj stan depth
         GLint oldDepthFunc = 0;
         glGetIntegerv(GL_DEPTH_FUNC, &oldDepthFunc);
 
         GLboolean oldDepthMask;
         glGetBooleanv(GL_DEPTH_WRITEMASK, &oldDepthMask);
 
-        // skybox jako tło
         glDepthFunc(GL_LEQUAL);
         glDepthMask(GL_FALSE);
 
@@ -221,7 +216,6 @@ private:
         glGenTextures(1, &m_cubemap);
         glBindTexture(GL_TEXTURE_CUBE_MAP, m_cubemap);
 
-        // cubemap NIE flipujemy
         stbi_set_flip_vertically_on_load(false);
 
         for (int i = 0; i < 6; i++)
@@ -240,7 +234,6 @@ private:
             stbi_image_free(data);
         }
 
-        // typowe ustawienia
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -250,7 +243,6 @@ private:
 
         glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
-        // przywróć flip do tekstur 2D w Twoim projekcie
         stbi_set_flip_vertically_on_load(true);
         return true;
     }
